@@ -6,17 +6,61 @@ import LandingScreen from './screens/LandingScreen';
 import LoginScreen from './screens/LoginScreen';
 import SignupScreenPart1 from './screens/SignupScreen';
 import SignupScreenPart2 from './screens/SignupScreen2';
+import SignupScreenPart3 from './screens/SignupScreen3';
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
 import HomeTabs from './HomeTabs';
 import AIPrediction from './InAppScreens/AIPrediction';
 import AIChatScreen from './InAppScreens/AIChat';
 import EmailVerificationScreen from './screens/EmailVerificationScreen';
 import PasswordResetVerificationScreen from './screens/PasswordResetVerificationScreen';
+import ResetPasswordScreen from './screens/ResetPasswordScreen';
 import CreatePostScreen, {CreatePost} from './screens/CreatePostScreen';
+import MyPostsScreen from './screens/MyPostsScreen';
+import SavedPostsScreen from './screens/SavedPosts';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect } from 'react';
 
 const Stack = createStackNavigator();
 
+
+const refreshAuthToken = async () => {
+  try {
+    const refreshToken = await AsyncStorage.getItem('refreshToken');
+    console.log("refresh token ",refreshToken);
+    
+    if (!refreshToken){return}; 
+
+    const response = await fetch('http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/token/refresh/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refresh: refreshToken }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      await AsyncStorage.setItem('accessToken', data.access);
+      console.log('🔄 Access token refreshed');
+      console.log('New Access Token:', data.access);
+    } else {
+      console.error('Failed to refresh token:', data);
+    }
+  } catch (error) {
+    console.error('Error refreshing token:', error);
+  }
+};
+
 export default function App() {
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshAuthToken();
+    }, 120000);
+
+    return () => clearInterval(interval); 
+  }, []);
+
   return (
     <UserProvider> 
       <NavigationContainer>
@@ -44,6 +88,11 @@ export default function App() {
             component={SignupScreenPart2} 
             options={{ title: 'Sign Up - Step 2' }} 
           />
+          <Stack.Screen
+            name="SignupPart3"
+            component={SignupScreenPart3}
+            options={{ title: 'Sign Up - Step 3' }}
+          />
           {/* Email Verification Screen*/}
           <Stack.Screen 
             name="EmailVerification" 
@@ -62,6 +111,14 @@ export default function App() {
             component={PasswordResetVerificationScreen}
             options={{ title: 'Reset Password' }}
           />
+
+          {/* Reset Password Screen */}
+          <Stack.Screen
+            name="ResetPassword"
+            component={ResetPasswordScreen}
+            options={{ title: 'Reset Password' }}
+          />
+
           {/* Home Tabs (Main App after login) */}
           <Stack.Screen 
             name="HomeTabs" 
@@ -85,6 +142,20 @@ export default function App() {
             name="CreatePost"
             component={CreatePostScreen}
             options={{ title: 'Create Post' }}  
+          />
+
+          {/* My Posts Screen */}
+          <Stack.Screen
+            name="MyPosts"
+            component={MyPostsScreen}
+            options={{ title: 'My Posts' }}
+          />
+
+          {/* Saved Posts Screen */}
+          <Stack.Screen
+            name="SavedPosts"
+            component={SavedPostsScreen}
+            options={{ title: 'Saved Posts' }}
           />
         </Stack.Navigator>
       </NavigationContainer>
