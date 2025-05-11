@@ -15,9 +15,11 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function CreatePostScreen({ navigation }) {
   const [postText, setPostText] = useState('');
+  const [titleText, setTitleText] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -34,6 +36,25 @@ export default function CreatePostScreen({ navigation }) {
     }
   };
 
+  const takePhoto = async () => {
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    if (permissionResult.granted === false) {
+      Alert.alert("Permission Denied", "Camera access is required to take photos.");
+      return;
+    }
+  
+    let result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+  
+    if (!result.canceled) {
+      setSelectedImage(result.assets[0].uri);
+    }
+  };
+
+  
   const removeImage = () => {
     setSelectedImage(null);
   };
@@ -47,7 +68,7 @@ export default function CreatePostScreen({ navigation }) {
     setLoading(true);
   
     let formData = new FormData();
-    formData.append("title", "User Post"); // Modify this as needed
+    formData.append("title", titleText); 
     formData.append("content", postText);
   
     if (selectedImage) {
@@ -61,22 +82,26 @@ export default function CreatePostScreen({ navigation }) {
     } else {
       formData.append("image", null);
     }
+    console.log("FormData:", formData); // Debugging  
   
     try {
-      const response = await fetch("http://localhost:8000/account/community/create/", {
+      const accessToken = await AsyncStorage.getItem('accessToken');
+      const response = await fetch("http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/community/create/", {
         method: "POST",
         headers: {
           "Content-Type": "multipart/form-data",
+          "Authorization": `Bearer ${accessToken}`
         },
         body: formData,
       });
   
       if (response.ok) {
-        Alert.alert("Success", "Your post has been created!");
+        // Alert.alert("Success", "Your post has been created!");
         setPostText('');
         setSelectedImage(null);
         navigation.goBack();
       } else {
+        console.log('response', response);
         Alert.alert("Error", "Failed to create post. Try again!");
       }
     } catch (error) {
@@ -94,6 +119,13 @@ export default function CreatePostScreen({ navigation }) {
           <Text style={styles.title}>Wanna Ask?</Text>
 
           <View style={styles.card}>
+          <TextInput
+              style={styles.Titleinput}
+              placeholder="Write a Title here..."
+              value={titleText}
+              onChangeText={setTitleText}
+              multiline
+            />
             <TextInput
               style={styles.input}
               placeholder="Write your question or description here..."
@@ -111,10 +143,18 @@ export default function CreatePostScreen({ navigation }) {
               </View>
             )}
 
-            <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
-              <FontAwesome name="image" size={18} color="#fff" />
-              <Text style={styles.imageButtonText}>Upload Image</Text>
-            </TouchableOpacity>
+<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+  <TouchableOpacity style={[styles.imageButton, { flex: 1, marginRight: 5 }]} onPress={pickImage}>
+    <FontAwesome name="image" size={18} color="#fff" />
+    <Text style={styles.imageButtonText}>Upload</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity style={[styles.imageButton, { flex: 1, marginLeft: 5 }]} onPress={takePhoto}>
+    <FontAwesome name="camera" size={18} color="#fff" />
+    <Text style={styles.imageButtonText}>Camera</Text>
+  </TouchableOpacity>
+</View>
+
 
             <TouchableOpacity style={styles.postButton} onPress={handlePost} disabled={loading}>
               {loading ? (
@@ -161,6 +201,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 5,
+  },
+  Titleinput: {
+    minHeight:50,
+    borderColor: '#DDD',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    backgroundColor: '#FAFAFA',
+    textAlignVertical: 'top',
+    fontSize:16,
+    marginBottom: 10,
+
   },
   input: {
     minHeight: 120,
