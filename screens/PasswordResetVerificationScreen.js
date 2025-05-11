@@ -44,50 +44,51 @@ export default function PasswordResetVerificationScreen({ route, navigation }) {
     }
   };
 
-  const verifyCode = async () => {
-    const enteredCode = code.join('');
-    if (enteredCode.length !== 6) {
-      Alert.alert('Error', 'Please enter the complete verification code');
+  const handleVerifyCode = async () => {
+    const verificationCode = code.join('');
+    if (verificationCode.length !== 6) {
+      Alert.alert('Error', 'Please enter the full 6-digit code.');
       return;
     }
 
     try {
-      const response = await fetch('http://localhost:8000/account/verify_reset_code', {
+      const response = await fetch('http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/verify-reset-code/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, verification_code: enteredCode }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `username_email=${encodeURIComponent(email)}&verification_code=${encodeURIComponent(verificationCode)}`
       });
 
-      const data = await response.json();
+      const result = await response.json();
+
       if (response.ok) {
-        Alert.alert('Success', 'Code verified successfully!', [
-          { text: 'OK', onPress: () => navigation.navigate('ResetPassword', { email }) },
-        ]);
+        Alert.alert('Success', result.message || 'Code verified successfully!');
+        navigation.navigate('ResetPassword', { email, verificationCode }); 
       } else {
-        Alert.alert('Error', data.message || 'Verification failed. Please try again.');
+        Alert.alert('Error', result.message || 'Invalid verification code. Please try again.');
       }
     } catch (error) {
-      Alert.alert('Error', 'An error occurred. Please check your connection and try again.');
+      console.error('Error:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
     }
   };
 
-  const resendCode = async () => {
+  const handleResendCode = async () => {
+    setResendDisabled(true);
+    setTimer(60); 
+
     try {
-      const response = await fetch(
-        `http://localhost:8000/account/resend_reset_code/${email}`,
-        { method: 'GET', headers: { 'Content-Type': 'application/json' } }
-      );
-  
-      const data = await response.json();
-      if (response.ok) {
-        Alert.alert('New Code Sent', 'A new verification code has been sent to your email.');
-        setResendDisabled(true);
-        setTimer(60);
-      } else {
-        Alert.alert('Error', data.message || 'Failed to resend verification code.');
-      }
+      const response = await fetch('http://localhost:8000/account/forgot_password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `username_email=${encodeURIComponent(email)}`
+      });
+
+      const result = await response.json();
+      Alert.alert(response.ok ? 'Success' : 'Error', result.message || 'Could not resend the code.');
     } catch (error) {
-      Alert.alert('Error', 'An error occurred. Please check your connection and try again.');
+      console.error('Error:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+      setResendDisabled(false);
     }
   };
 
@@ -123,14 +124,14 @@ export default function PasswordResetVerificationScreen({ route, navigation }) {
           ))}
         </View>
 
-        <TouchableOpacity style={styles.verifyButton} onPress={verifyCode}>
+        <TouchableOpacity style={styles.verifyButton} onPress={handleVerifyCode}>
           <Text style={styles.buttonText}>Verify Code</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
           style={[styles.resendContainer, resendDisabled && styles.disabledButton]} 
-          onPress={resendCode}
           disabled={resendDisabled}
+          onPress={handleResendCode}
         >
           <Text style={styles.resendText}>Didn't receive the code? </Text>
           <Text style={styles.resendButton}>
@@ -183,4 +184,3 @@ const styles = StyleSheet.create({
   resendButton: { color: '#A0C4FF', fontSize: 14, fontWeight: '600' },
   disabledButton: { opacity: 0.5 },
 });
-
