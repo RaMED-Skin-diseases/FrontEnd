@@ -10,14 +10,15 @@ import {
   KeyboardAvoidingView,
   Platform 
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
+//992866
 export default function EmailVerificationScreen({ route, navigation }) {
   const { email , username } = route.params;
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [resendDisabled, setResendDisabled] = useState(false);
   const [timer, setTimer] = useState(0); // Timer starts at 0
   const inputRefs = useRef([]);
-
   useEffect(() => {
     let interval = null;
     if (timer > 0) {
@@ -25,7 +26,7 @@ export default function EmailVerificationScreen({ route, navigation }) {
         setTimer((prev) => prev - 1);
       }, 1000);
     } else if (timer === 0) {
-      setResendDisabled(false); // Re-enable button when timer hits 0
+      setResendDisabled(false); 
       clearInterval(interval);
     }
     return () => clearInterval(interval);
@@ -48,75 +49,99 @@ export default function EmailVerificationScreen({ route, navigation }) {
   };
 
   const verifyCode = async () => {
-    const enteredCode = code.join('');
-    if (enteredCode.length !== 6) {
-      Alert.alert('Error', 'Please enter the complete verification code');
-      return;
+    const verificationCode = code.join('');
+
+    console.log("Verification code:", verificationCode);
+    if (!verificationCode || verificationCode.trim() === "") {
+        console.log("Verification code is empty, returning early.");
+        Alert.alert("Error", "Please enter the verification code.");
+        return;
     }
-  
+
     const payload = {
-      email: email,
-      verification_code: enteredCode,
+        email: email,
+        verification_code: verificationCode
     };
-  
+
+    const queryString = Object.keys(payload)
+        .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(payload[key])}`)
+        .join('&');
+
+    console.log("Query String:", queryString);
+
     try {
-      const response = await fetch('http://localhost:8000/account/verify_email', {
-        method: 'POST',
+        console.log("Making API call...");
+        const response = await fetch("http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/verify_email", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Accept": "application/json",
+            },
+            body: queryString,
+        });
+
+        const textResponse = await response.text();
+        console.log("Raw response:", textResponse);
+
+        let jsonData = null;
+        try {
+            jsonData = JSON.parse(textResponse);
+        } catch (parseError) {
+            console.error("Failed to parse JSON:", parseError);
+        }
+
+        if (!response.ok || !jsonData || jsonData.message !== "Email verified successfully.") {
+            console.log("Error response or verification failed:", jsonData);
+            Alert.alert("Error", "Verification failed. Please check the code and try again.");
+        } else {
+            console.log("Email verified successfully.");
+            Alert.alert("Success", "Your email has been verified!");
+            navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+            // You can add navigation or logic here after successful verification
+        }
+
+    } catch (error) {
+        console.error("Network error:", error);
+        Alert.alert("Error", "Network request failed. Please check your internet connection.");
+    }
+};
+
+
+
+
+
+const resendCode = async () => {
+  try {
+    const response = await fetch(
+      `http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/resend_verification_code/${username}`,
+      {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
-      });
-  
-      const textResponse = await response.text(); // Get raw response text
-      console.log("Raw Response:", textResponse);
-  
-      const data = JSON.parse(textResponse); // Convert to JSON manually
-  
-      if (response.ok) {
-        Alert.alert('Success', 'Email verified successfully!', [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('Login'),
-          },
-        ]);
-      } else {
-        Alert.alert('Error', data.message || 'Verification failed. Please try again.');
       }
-    } catch (error) {
-      console.error("An error occurred:", error);
-      Alert.alert('Error', 'An error occurred. Please check your connection and try again.');
-    }
-  };
-  
+    );
 
+    
+    const responseText = await response.text();
+    console.log("Raw response:", responseText);
 
-  const resendCode = async () => {
-    console.log("Received in EmailVerification:", email, username);
-    try {
-      const response = await fetch(
-        `http://localhost:8000/account/resend_verification_code/${username}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-  
-      const data = await response.json();
-  
-      if (response.ok) {
-        Alert.alert('New Code Sent', 'A new verification code has been sent to your email.');
-        setResendDisabled(true); // Disable button
-        setTimer(60); // Start 60-second timer
-      } else {
-        Alert.alert('Error', data.message || 'Failed to resend verification code. Please try again.');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'An error occurred. Please check your connection and try again.');
+    if (response.ok) {
+      const data = JSON.parse(responseText);
+      console.log("Resend response:", data);
+
+      Alert.alert('New Code Sent', 'A new verification code has been sent to your email.');
+      setResendDisabled(true); 
+      setTimer(60); 
+    } else {
+      Alert.alert('Error', 'Failed to resend verification code. Please try again.');
     }
-  };
+  } catch (error) {
+    console.log("Network error:", error);
+    Alert.alert('Error', 'An error occurred. Please check your connection and try again.');
+  }
+};
+
   
 
   return (
@@ -258,6 +283,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   disabledButton: {
-    opacity: 0.5, // Makes the button look disabled
+    opacity: 0.5,
   },
 });
