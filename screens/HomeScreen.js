@@ -1,168 +1,269 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Alert, 
+  ScrollView, 
+  Animated, 
+  Dimensions 
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const navigation = useNavigation();
+  const [userName, setUserName] = useState('User');
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [cardScales] = useState({
+    prediction: new Animated.Value(1),
+    chat: new Animated.Value(1),
+    community: new Animated.Value(1),
+  });
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('userData');
+        console.log('User data:', userData);
+        if (userData) {
+          const parsedData = JSON.parse(userData);
+          setUserName(parsedData.username || 'User');
+        }
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+      }
+    };
+    fetchUserData();
+
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const handleLogout = async () => {
-    try{
-      const response = await fetch('http://localhost:8000/account/logout',{method:'GET',headers:{'Content-Type':'application/json'}}); 
-      const data = await response.json(); 
-      if(response.ok){
-        navigation.navigate('Landing');
-      }else{
-        Alert.alert('Error', data.message || 'Failed to logout. Please try again.');}
+    const accessToken = await AsyncStorage.getItem('accessToken');
+    const refreshToken = await AsyncStorage.getItem('refreshToken');
+    const bodyToSend = {
+      access: accessToken,
+      refresh: refreshToken,
+    };
+    try {
+      const response = await fetch('http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          "Authorization": `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(bodyToSend),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        await AsyncStorage.removeItem('accessToken');
+        await AsyncStorage.removeItem('refreshToken');
+        await AsyncStorage.removeItem('userData');
+        navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
+      } else {
+        console.error("Logout failed:", data);
+        Alert.alert('Error', data.message || 'Logout failed. Please try again.');
       }
-      catch(error){
-        Alert.alert('Error', 'An error occurred. Please check your connection and try again.');
-      }
-  }
+    } catch (error) {
+      console.error('Logout request failed:', error);
+      Alert.alert('Error', 'An error occurred. Please check your connection and try again.');
+    }
+  };
+
+  const animateCard = (card, scaleTo) => {
+    Animated.spring(cardScales[card], {
+      toValue: scaleTo,
+      friction: 8,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.appName}>SkinWise</Text>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
+    <LinearGradient
+      colors={['#E6F0FA', '#D1E4F5']}
+      style={styles.container}
+    >
+      <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <FontAwesome5 name="diagnoses" size={30} color="#1E88E5" />
+              <Text style={styles.appName}>SkinWise</Text>
+            </View>
+            <TouchableOpacity onPress={handleLogout}>
+              <FontAwesome5 name="sign-out-alt" size={24} color="#1E88E5" />
+            </TouchableOpacity>
+          </View>
 
-      {/* Welcome Message */}
-      <View style={styles.welcomeSection}>
-        <Text style={styles.welcomeText}>Welcome Back!</Text>
-      </View>
+          {/* Welcome Section */}
+          <View style={styles.welcomeSection}>
+            <Text style={styles.welcomeText}>Hello, {userName} !</Text>
+            <Text style={styles.welcomeSubText}>Your skin health journey starts here.</Text>
+          </View>
 
-      {/* AI Prediction Section */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>AI Skin Prediction</Text>
-        <Text style={styles.cardText}>
-          Upload a clear image of your skin, and our AI will analyze it to predict any skin condition.
-        </Text>
-        <TouchableOpacity
-          style={styles.uploadButton}
-          onPress={() => navigation.navigate('AIPrediction')}
-        >
-          <Text style={styles.uploadButtonText}>Upload Image</Text>
-        </TouchableOpacity>
-      </View>
+          {/* Cards */}
+          <Animated.View
+            style={[styles.card, { transform: [{ scale: cardScales.prediction }] }]}
+            onStartShouldSetResponder={() => true}
+            onResponderGrant={() => animateCard('prediction', 1.05)}
+            onResponderRelease={() => {
+              animateCard('prediction', 1);
+              navigation.navigate('AIPrediction');
+            }}
+          >
+            <LinearGradient
+              colors={['#FFFFFF', '#F5F9FF']}
+              style={styles.cardGradient}
+            >
+              <FontAwesome5 name="camera-retro" size={28} color="#1E88E5" style={styles.cardIcon} />
+              <Text style={styles.cardTitle}>AI Skin Analysis</Text>
+              <Text style={styles.cardText}>Upload a skin image for instant AI-powered diagnosis.</Text>
+              <TouchableOpacity style={styles.actionButton}>
+                <Text style={styles.actionButtonText} onPress={() => navigation.navigate('AIPrediction')}>Scan Now</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </Animated.View>
 
-      {/* Chat with AI Section */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Chat with AI Bot</Text>
-        <Text style={styles.cardText}>
-          Have questions about your skin condition? Start a conversation with our AI bot.
-        </Text>
-        <TouchableOpacity
-          style={styles.chatButton}
-          onPress={() => navigation.navigate('AIChat')}
-        >
-          <Text style={styles.chatButtonText}>Chat Now</Text>
-        </TouchableOpacity>
-      </View>
+          <Animated.View
+            style={[styles.card, { transform: [{ scale: cardScales.chat }] }]}
+            onStartShouldSetResponder={() => true}
+            onResponderGrant={() => animateCard('chat', 1.05)}
+            onResponderRelease={() => {
+              animateCard('chat', 1);
+              navigation.navigate('AIChat');
+            }}
+          >
+            <LinearGradient
+              colors={['#FFFFFF', '#F5F9FF']}
+              style={styles.cardGradient}
+            >
+              <FontAwesome5 name="robot" size={28} color="#1E88E5" style={styles.cardIcon} />
+              <Text style={styles.cardTitle}>AI Assistant</Text>
+              <Text style={styles.cardText}>Chat with our AI to get answers about skin health.</Text>
+              <TouchableOpacity style={styles.actionButton}>
+                <Text style={styles.actionButtonText} onPress={() => navigation.navigate('AIChat')}>Ask Away</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </Animated.View>
 
-      {/* Communications Section */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Communications</Text>
-        <TouchableOpacity style={styles.contactButton} onPress={() => {}}>
-          <Text style={styles.contactButtonText}>Contact a Doctor</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+          <Animated.View
+            style={[styles.card, { transform: [{ scale: cardScales.community }] }]}
+            onStartShouldSetResponder={() => true}
+            onResponderGrant={() => animateCard('community', 1.05)}
+            onResponderRelease={() => {
+              animateCard('community', 1);
+              navigation.navigate('Community');
+            }}
+          >
+            <LinearGradient
+              colors={['#FFFFFF', '#F5F9FF']}
+              style={styles.cardGradient}
+            >
+              <FontAwesome5 name="users" size={28} color="#1E88E5" style={styles.cardIcon} />
+              <Text style={styles.cardTitle}>Community Hub</Text>
+              <Text style={styles.cardText}>Connect with others and share your experiences.</Text>
+              <TouchableOpacity style={styles.actionButton}>
+                <Text style={styles.actionButtonText} onPress={() => navigation.navigate('Community')} >Join Community</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </Animated.View>
+        </ScrollView>
+      </Animated.View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
-    padding: 20,
+  },
+  content: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    padding: 20,
+    paddingTop: 40,
+    backgroundColor: 'transparent',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   appName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#3E4A59',
-  },
-  logoutButton: {
-    backgroundColor: '#4184f2',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 5,
-  },
-  logoutText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#1E88E5',
+    marginLeft: 12,
   },
   welcomeSection: {
-    marginVertical: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
   welcomeText: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#3E4A59',
   },
+  welcomeSubText: {
+    fontSize: 16,
+    color: '#6C757D',
+    marginTop: 5,
+  },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 20,
+    marginHorizontal: 20,
     marginVertical: 10,
+    borderRadius: 20,
+    overflow: 'hidden',
+    elevation: 8,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 5,
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 5 },
+  },
+  cardGradient: {
+    padding: 20,
+  },
+  cardIcon: {
+    marginBottom: 15,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
     color: '#3E4A59',
     marginBottom: 10,
   },
   cardText: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#6C757D',
-    marginTop: 10,
+    marginBottom: 20,
+    lineHeight: 22,
   },
-  uploadButton: {
-    backgroundColor: '#4184f2',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginTop: 15,
+  actionButton: {
+    backgroundColor: '#1E88E5',
+    paddingVertical: 12,
+    borderRadius: 10,
     alignItems: 'center',
+    width: '50%',
   },
-  uploadButtonText: {
+  actionButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: 'bold',
-  },
-  chatButton: {
-    backgroundColor: '#4184f2',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginTop: 15,
-    alignItems: 'center',
-  },
-  chatButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  contactButton: {
-    backgroundColor: '#4184f2',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  contactButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
 });
