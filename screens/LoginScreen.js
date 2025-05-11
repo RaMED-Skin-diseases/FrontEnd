@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -10,52 +11,60 @@ export default function LoginScreen({ navigation }) {
       Alert.alert('Error', 'Please enter both email and password');
       return;
     }
+  
     try {
-      const response = await fetch('http://localhost:8000/account/login', {
+      const response = await fetch('http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `username_email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
+        body: `username_email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&remember_me=True`,
       });
   
-      const contentType = response.headers.get('content-type');
-      let responseText;
-  
-      if (contentType && contentType.includes('application/json')) {
-        // Parse JSON response if content type is JSON
-        const result = await response.json();
-        responseText = result.message || 'Logged in successfully';
-      } else {
-        // Handle plain text response (like "Login successful.")
-        responseText = await response.text();
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const textResponse = await response.text();
+        console.error("Non-JSON response:", textResponse);
+        Alert.alert("Login Failed", "Invalid response from server");
+        return;
       }
   
-      if (response.ok) {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'HomeTabs' }], // Navigate to HomeTabs
-        });
-      } else {
-        console.log("response text : ",responseText)
-        Alert.alert('Login Failed', responseText || 'Invalid email or password');
+      const result = await response.json();
+      console.log("API Response:", result);
+  
+      if (result.error === "Email not verified. Please verify your email.") {
+        navigation.navigate("EmailVerification", { email });
+        return;
       }
+  
+      if (!response.ok) {
+        Alert.alert("Login Failed", result.error || "Invalid email or password");
+        return;
+      }
+  
+      const { access, refresh, user } = result;
+  
+
+      await AsyncStorage.setItem("accessToken", access);
+      await AsyncStorage.setItem("refreshToken", refresh);
+      await AsyncStorage.setItem("userData", JSON.stringify(user));
+  
+
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "HomeTabs", params: { user } }],
+      });
     } catch (error) {
-      console.error('Request failed:', error);
-      Alert.alert('Error', error.message);
+      console.error("Request failed:", error);
+      Alert.alert("Error", error.message);
     }
   };
-  
-  
   
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Image 
-          source={require('../assets/Image.jpeg')}
-          style={styles.image}
-        /> 
+        <Image source={require('../assets/Image.jpeg')} style={styles.image} /> 
         <Text style={styles.headerTitle}>SkinWise</Text>
       </View>
 
@@ -68,7 +77,6 @@ export default function LoginScreen({ navigation }) {
           keyboardType="email-address"
           autoCapitalize="none"
         />
-
         <TextInput
           style={styles.input}
           placeholder="Password"
@@ -82,9 +90,8 @@ export default function LoginScreen({ navigation }) {
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-</TouchableOpacity>
-
+          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
@@ -99,7 +106,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: '#FFFFFF',
-    justifyContent: 'space-between', // Space out items vertically
+    justifyContent: 'space-between',
   },
   header: {
     position: 'absolute',
@@ -120,8 +127,8 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     flex: 1,
-    justifyContent: 'center', // Center the inputs vertically in the space
-    marginTop: 200, // Space down from the header
+    justifyContent: 'center',
+    marginTop: 200,
   },
   input: {
     borderWidth: 1,
@@ -147,13 +154,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
     marginBottom: 20,
-  },forgotPasswordText: {
+  },
+  forgotPasswordText: {
     color: '#007BFF',
     textAlign: 'center',
     fontSize: 16,
     marginTop: 10,
-  },signup: {
+  },
+  signup: {
     color: '#007BFF',
   },  
-  
 });
+
