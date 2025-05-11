@@ -11,7 +11,7 @@ export default function ForgotPasswordScreen({ navigation }) {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/account/forgot_password', {
+      const response = await fetch('http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/forgot_password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    justifyContent: 'space-between', // Space out the elements
+    justifyContent: 'space-between', 
     backgroundColor: '#FFFFFF',
   },
   header: {
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   footer: {
-    marginBottom: 20, // Adds spacing from the bottom
+    marginBottom: 20,
   },
   button: {
     backgroundColor: '#A0C4FF',
