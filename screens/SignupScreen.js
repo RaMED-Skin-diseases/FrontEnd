@@ -1,5 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Button, Alert, Image, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  Button,
+  Alert,
+  Image,
+  ScrollView,
+  Modal,
+  Platform,
+} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function SignupScreenPart1({ navigation, route }) {
@@ -11,24 +23,21 @@ export default function SignupScreenPart1({ navigation, route }) {
     dateOfBirth: '',
     userRole: userRole,
   });
-  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [tempDate, setTempDate] = useState(new Date());
 
   const handleInputChange = (field, value) => {
     setForm({ ...form, [field]: value });
   };
 
-  const handleDateChange = (event, selectedDate) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      // Format the date to YYYY-MM-DD before passing it
-      const formattedDate = selectedDate.toISOString().split('T')[0]; 
-      handleInputChange('dateOfBirth', formattedDate);
-    }
+  const handleDateConfirm = () => {
+    const formattedDate = tempDate.toISOString().split('T')[0];
+    handleInputChange('dateOfBirth', formattedDate);
+    setShowDateModal(false);
   };
-  
 
   const handleNext = () => {
-    console.log('next pressed');
     const { firstName, lastName, gender, dateOfBirth } = form;
     if (!firstName || !lastName || !gender || !dateOfBirth) {
       Alert.alert('Error', 'Please fill in all fields');
@@ -40,14 +49,10 @@ export default function SignupScreenPart1({ navigation, route }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Image 
-          source={require('../assets/Image.jpeg')}
-          style={styles.image}
-        /> 
+        <Image source={require('../assets/Image.jpeg')} style={styles.image} />
         <Text style={styles.headerTitle}>SkinWise</Text>
       </View>
 
-      {/* ScrollView for form content */}
       <ScrollView contentContainerStyle={styles.formContainer}>
         <Text style={styles.title}>{userRole} Sign Up - Step 1</Text>
 
@@ -66,44 +71,66 @@ export default function SignupScreenPart1({ navigation, route }) {
         />
 
         <View style={styles.radioContainer}>
-          <TouchableOpacity 
-            style={[styles.radioButton, form.gender === 'Male' && styles.radioButtonSelected]} 
+          <TouchableOpacity
+            style={[
+              styles.radioButton,
+              form.gender === 'Male' && styles.radioButtonSelected,
+            ]}
             onPress={() => handleInputChange('gender', 'Male')}
           >
             <Text style={styles.radioText}>Male</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.radioButton, form.gender === 'Female' && styles.radioButtonSelected]} 
+          <TouchableOpacity
+            style={[
+              styles.radioButton,
+              form.gender === 'Female' && styles.radioButtonSelected,
+            ]}
             onPress={() => handleInputChange('gender', 'Female')}
           >
             <Text style={styles.radioText}>Female</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.dateOfBirthInput} onPress={() => setShowDatePicker(true)}>
+        <TouchableOpacity
+          style={styles.dateOfBirthInput}
+          onPress={() => setShowDateModal(true)}
+        >
           <Text style={styles.dateText}>
             {form.dateOfBirth ? form.dateOfBirth : 'Select Date of Birth'}
           </Text>
         </TouchableOpacity>
 
-        {showDatePicker && (
-          <DateTimePicker
-            mode="date"
-            display="spinner"
-            value={new Date()}
-            onChange={handleDateChange}
-          />
-        )}
+        {/* Modal Date Picker */}
+        <Modal visible={showDateModal} transparent animationType="slide">
+          <View style={styles.modalContainer}>
+            <View style={styles.pickerContainer}>
+              <DateTimePicker
+                mode="date"
+                value={tempDate}
+                display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
+                onChange={(event, selectedDate) => {
+                  if (selectedDate) {
+                    setTempDate(selectedDate);
+                  }
+                }}
+              />
+              <View style={styles.modalButtons}>
+                <Button title="Cancel" onPress={() => setShowDateModal(false)} />
+                <Button title="Confirm" onPress={handleDateConfirm} />
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
 
-      {/* View for Next Button - placed at the bottom */}
       <View style={styles.buttonContainer}>
         <Button title="Next" onPress={handleNext} />
       </View>
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -126,7 +153,7 @@ const styles = StyleSheet.create({
   formContainer: {
     paddingHorizontal: 20,
     paddingTop: 20,
-    flexGrow: 1,  // Makes the ScrollView take up available space
+    flexGrow: 1, 
   },
   title: {
     fontSize: 24,
@@ -176,8 +203,31 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   buttonContainer: {
-    marginTop: 'auto', // Pushes the button to the bottom
-    marginBottom: 20, // Adds some margin at the bottom for better UI
+    marginTop: 'auto',
+    marginBottom: 20, 
   },
+  image: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginBottom: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  pickerContainer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  
 });
 

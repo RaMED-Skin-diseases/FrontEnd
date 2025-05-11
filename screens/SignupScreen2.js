@@ -4,12 +4,13 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Image } fro
 export default function SignupScreenPart2({ route, navigation }) {
   const { form: formData } = route.params;
 
-  // Set the state with the values passed from Part 1, along with the new fields (username, email, etc.)
+
   const [form, setForm] = useState({
     firstName: formData.firstName,
     lastName: formData.lastName,
     dateOfBirth: formData.dateOfBirth,
     userRole: formData.userRole,
+    gender: formData.gender,
     username: '',
     email: '',
     password: '',
@@ -21,15 +22,14 @@ export default function SignupScreenPart2({ route, navigation }) {
   };
 
   const validateAndSubmit = async () => {
-    const { username, email, password, confirmPassword, firstName, lastName, dateOfBirth, userRole } = form;
+    const { username, email, password, confirmPassword, firstName, lastName, dateOfBirth, userRole , gender } = form;
     
-    // Check for missing fields
     const missingFields = [];
     if (!username) missingFields.push('Username');
     if (!email) missingFields.push('Email');
     if (!password) missingFields.push('Password');
     if (!confirmPassword) missingFields.push('Confirm Password');
-    if (!formData.gender) missingFields.push('Gender');
+    if (!gender) missingFields.push('Gender');
   
     if (missingFields.length > 0) {
       Alert.alert('Missing Fields', `Please fill in the following fields:\n${missingFields.join(', ')}`);
@@ -48,12 +48,17 @@ export default function SignupScreenPart2({ route, navigation }) {
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
+
+    console.log('userRole', userRole);
+    if(userRole==='Doctor'){
+      navigation.navigate('SignupPart3', { form });
+      return;
+    }
   
-    // Construct request body
-    const requestBody = `f_name=${encodeURIComponent(firstName)}&l_name=${encodeURIComponent(lastName)}&date_of_birth=${encodeURIComponent(dateOfBirth)}&email=${encodeURIComponent(email)}&gender=${encodeURIComponent(formData.gender)}&password=${encodeURIComponent(password)}&username=${encodeURIComponent(username)}&user_type=${encodeURIComponent(userRole)}`;
+    const requestBody = `f_name=${encodeURIComponent(firstName)}&l_name=${encodeURIComponent(lastName)}&date_of_birth=${encodeURIComponent(dateOfBirth)}&email=${encodeURIComponent(email)}&gender=${encodeURIComponent(gender)}&password=${encodeURIComponent(password)}&username=${encodeURIComponent(username)}&user_type=${encodeURIComponent(userRole)}`;
   
     try {
-      const response = await fetch('http://localhost:8000/account/signup', {
+      const response = await fetch('http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
