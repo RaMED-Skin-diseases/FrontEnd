@@ -78,6 +78,47 @@ export default function AIPrediction({ navigation }) {
   
     navigation.navigate('AIChat', { initialMessage: summary });
   };
+
+
+  function combineResults(class1, conf1, class2, conf2) {
+    // Known conflict cases
+    const conflictPairs = {
+        'Eczema|Psoriasis': 'Psoriasis',
+        'Benign Keratosis|actinic keratosis': 'actinic keratosis',
+        'Melanocytic Nevi|Melanoma': 'Melanoma',
+        'Atopic Dermatitis|Eczema': 'Eczema'
+    };
+
+    const key1 = `${class1}|${class2}`;
+    const key2 = `${class2}|${class1}`;
+    
+    console.log('confidence',Math.max(parseFloat(conf1), parseFloat(conf2)))
+    if (conflictPairs.hasOwnProperty(key1)) {
+        return {
+            final_class: conflictPairs[key1],
+            confidence: Math.max(parseFloat(conf1), parseFloat(conf2))
+        };
+    } else if (conflictPairs.hasOwnProperty(key2)) {
+        return {
+            final_class: conflictPairs[key2],
+            confidence: Math.max(parseFloat(conf1), parseFloat(conf2))
+        };
+    }
+
+    if (conf1 > conf2 + 0.15) {
+        return {
+            final_class: class1,
+            confidence: conf1
+        };
+    } else {
+        return {
+            final_class: class2,
+            confidence: conf2
+        };
+    }
+}
+
+
   
   const handleModalSubmit = async () => {
     console.log('Sunlight Duration:', sunlightDuration);
@@ -96,30 +137,54 @@ export default function AIPrediction({ navigation }) {
         name: 'upload.jpg',
         type: 'file/jpeg',
       });
-
+  
       const token = await AsyncStorage.getItem('accessToken');
-      const response = await fetch("http://localhost:8000/predict/", {
-        method: "POST",
+      const response = await fetch('http://localhost:8000/predict/', {
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
-
+  
       console.log('Response:', response);
       console.log(formData);
-
+  
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
   
       const data = await response.json();
-      console.log('Data:', data.predicted_class);
-      setPrediction(data.predicted_class || data.message);
-      setProbability(data.probability || "N/A");
+      console.log('Data:', data);
+  
+      // Compare probabilities from tensorflow and torch predictions
+      // const tfProbability = parseFloat(data.tensorflow_prediction.probability) || 0;
+      // const torchProbability = parseFloat(data.torch_prediction.probability) || 0;
+  
+      // let predictedClass, probability;
+
+      let combined_results = combineResults(data.tensorflow_prediction.class,data.tensorflow_prediction.probability,data.torch_prediction.class,data.torch_prediction.probability)
+      console.log('Combined Results:', combined_results);
+      setPrediction(combined_results.final_class);
+      console.log(combined_results.confidence)
+      setProbability(combined_results.confidence);
+
+
+
+      // if (tfProbability > torchProbability) {
+      //   predictedClass = data.tensorflow_prediction.class;
+      //   probability = data.tensorflow_prediction.probability;
+      // } else {
+      //   predictedClass = data.torch_prediction.class;
+      //   probability = data.torch_prediction.probability;
+      //   if (data.torch_prediction.message) {
+      //     predictedClass = `${predictedClass} (${data.torch_prediction.message})`;
+      //   }
+      // }
+  
   
     } catch (error) {
-      Alert.alert("Error", error.message || "Failed to analyze image.");
+      Alert.alert('Error', error.message || 'Failed to analyze image.');
     } finally {
       setIsLoading(false);
     }
@@ -200,7 +265,7 @@ export default function AIPrediction({ navigation }) {
             </View>
             <View style={styles.resultRow}>
               <Text style={styles.resultLabel}>Confidence:</Text>
-              <Text style={styles.resultValue}>{probability}</Text>
+              <Text style={styles.resultValue}>{probability} %</Text>
             </View>
             <TouchableOpacity
               style={styles.chatButton}
