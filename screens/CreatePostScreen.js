@@ -86,7 +86,7 @@ export default function CreatePostScreen({ navigation }) {
   
     try {
       const accessToken = await AsyncStorage.getItem('accessToken');
-      const response = await fetch("http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/community/create/", {
+      const response = await fetch("https://skinwise.tech/community/create/", {
         method: "POST",
         headers: {
           "Content-Type": "multipart/form-data",

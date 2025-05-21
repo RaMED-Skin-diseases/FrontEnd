@@ -24,7 +24,7 @@ const ProfileScreen = () => {
     try {
       const token = await AsyncStorage.getItem('accessToken');
       const res = await fetch(
-        'http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/detect/my-diagnoses/',
+        'https://skinwise.tech/detect/my-diagnoses/',
         {
           method: 'GET',
           headers: {
@@ -58,7 +58,7 @@ const ProfileScreen = () => {
           try {
             const token = await AsyncStorage.getItem('accessToken');
             await fetch(
-              `http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/detect/delete-diagnosis/${id}/`,
+              `https://skinwise.tech/detect/delete-diagnosis/${id}/`,
               {
                 method: 'DELETE',
                 headers: {

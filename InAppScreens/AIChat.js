@@ -42,7 +42,7 @@ export default function AIChatScreen({ route, navigation }) {
   const sendMessageToBot = async (messageText, errorMessageId = null) => {
     try {
       setIsLoading(true);
-      const response = await fetch('http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/chatbot/reply/', {
+      const response = await fetch('https://skinwise.tech/chatbot/reply/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

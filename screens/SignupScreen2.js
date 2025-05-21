@@ -58,7 +58,7 @@ export default function SignupScreenPart2({ route, navigation }) {
     const requestBody = `f_name=${encodeURIComponent(firstName)}&l_name=${encodeURIComponent(lastName)}&date_of_birth=${encodeURIComponent(dateOfBirth)}&email=${encodeURIComponent(email)}&gender=${encodeURIComponent(gender)}&password=${encodeURIComponent(password)}&username=${encodeURIComponent(username)}&user_type=${encodeURIComponent(userRole)}`;
   
     try {
-      const response = await fetch('http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/signup', {
+      const response = await fetch('https://skinwise.tech/account/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',

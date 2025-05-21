@@ -11,7 +11,7 @@ export default function ForgotPasswordScreen({ navigation }) {
     }
 
     try {
-      const response = await fetch('http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/forgot_password', {
+      const response = await fetch('https://skinwise.tech/account/forgot_password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',

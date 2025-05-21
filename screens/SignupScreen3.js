@@ -62,7 +62,7 @@ export default function SignupScreenPart3({ route, navigation }) {
     console.log('Sending FormData...');
   
     try {
-      const response = await fetch('http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/signup', {
+      const response = await fetch('https://skinwise.tech/account/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'multipart/form-data',

@@ -139,7 +139,8 @@ export default function AIPrediction({ navigation }) {
       });
   
       const token = await AsyncStorage.getItem('accessToken');
-      const response = await fetch('http://localhost:8000/predict/', {
+      // http://localhost:8000/predict/
+      const response = await fetch('https://skinwise.tech/predict/', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,

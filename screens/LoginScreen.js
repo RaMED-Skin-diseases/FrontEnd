@@ -13,7 +13,7 @@ export default function LoginScreen({ navigation }) {
     }
   
     try {
-      const response = await fetch('http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/login', {
+      const response = await fetch('https://skinwise.tech/account/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',

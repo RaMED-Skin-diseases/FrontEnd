@@ -71,7 +71,7 @@ export default function EmailVerificationScreen({ route, navigation }) {
 
     try {
         console.log("Making API call...");
-        const response = await fetch("http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/verify_email", {
+        const response = await fetch("https://skinwise.tech/account/verify_email", {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -113,7 +113,7 @@ export default function EmailVerificationScreen({ route, navigation }) {
 const resendCode = async () => {
   try {
     const response = await fetch(
-      `http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/resend_verification_code/${username}`,
+      `https://skinwise.tech/account/resend_verification_code/${username}`,
       {
         method: 'GET',
         headers: {

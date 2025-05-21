@@ -30,7 +30,7 @@ const refreshAuthToken = async () => {
     
     if (!refreshToken){return}; 
 
-    const response = await fetch('http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/token/refresh/', {
+    const response = await fetch('https://skinwise.tech/token/refresh/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

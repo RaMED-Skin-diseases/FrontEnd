@@ -52,7 +52,7 @@ export default function PasswordResetVerificationScreen({ route, navigation }) {
     }
 
     try {
-      const response = await fetch('http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/verify-reset-code/', {
+      const response = await fetch('https://skinwise.tech/account/verify-reset-code/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `username_email=${encodeURIComponent(email)}&verification_code=${encodeURIComponent(verificationCode)}`
@@ -77,7 +77,7 @@ export default function PasswordResetVerificationScreen({ route, navigation }) {
     setTimer(60); 
 
     try {
-      const response = await fetch('http://localhost:8000/account/forgot_password', {
+      const response = await fetch('https://skinwise.tech/forgot_password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `username_email=${encodeURIComponent(email)}`

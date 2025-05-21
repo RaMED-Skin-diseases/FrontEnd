@@ -41,7 +41,7 @@ const SettingsScreen = ({ navigation }) => {
         const { username } = JSON.parse(userData);
 
         const response = await fetch(
-          `http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/profile/${encodeURIComponent(username)}`,
+          `https://skinwise.tech/account/profile/${encodeURIComponent(username)}`,
           {
             method: 'GET',
             headers: {
@@ -130,7 +130,7 @@ const SettingsScreen = ({ navigation }) => {
       }
 
       const response = await fetch(
-        'http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/edit_profile',
+        'https://skinwise.tech/account/edit_profile',
         {
           method: 'PATCH',
           headers: {
@@ -170,7 +170,7 @@ const SettingsScreen = ({ navigation }) => {
     };
 
     try {
-      const response = await fetch('http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/logout', {
+      const response = await fetch('https://skinwise.tech/account/logout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

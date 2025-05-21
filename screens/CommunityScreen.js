@@ -59,7 +59,7 @@ export default function CommunityScreen({ navigation }) {
       const params = new URLSearchParams();
       if (sortBy) params.append('sort_by', sortBy);
       if (searchQuery) params.append('search', searchQuery);
-      const url = `http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/community/?${params.toString()}`;
+      const url = `https://skinwise.tech/community/?${params.toString()}`;
 
       const response = await fetch(url, {
         method: "GET",
@@ -123,7 +123,7 @@ export default function CommunityScreen({ navigation }) {
         return;
       }
 
-      const response = await fetch(`http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/community/post/${postId}/`, {
+      const response = await fetch(`https://skinwise.tech/community/post/${postId}/`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -167,7 +167,7 @@ export default function CommunityScreen({ navigation }) {
           content: replies[postId],
         };
 
-        const response = await fetch(`http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/community/post/${postId}/`, {
+        const response = await fetch(`https://skinwise.tech/community/post/${postId}/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -204,7 +204,7 @@ export default function CommunityScreen({ navigation }) {
         return;
       }
 
-      const response = await fetch(`http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/community/save-post/${postId}/`, {
+      const response = await fetch(`https://skinwise.tech/community/save-post/${postId}/`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${accessToken}`,

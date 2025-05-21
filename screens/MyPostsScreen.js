@@ -66,7 +66,7 @@ export default function MyPostsScreen({ navigation }) {
       }
 
 
-      const url = `http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/community/`;
+      const url = `https://skinwise.tech/community/`;
 
       const response = await fetch(url, {
         method: "GET",
@@ -132,7 +132,7 @@ export default function MyPostsScreen({ navigation }) {
         return;
       }
 
-      const response = await fetch(`http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/community/post/${postId}/`, {
+      const response = await fetch(`https://skinwise.tech/community/post/${postId}/`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -176,7 +176,7 @@ export default function MyPostsScreen({ navigation }) {
           content: replies[postId],
         };
 
-        const response = await fetch(`http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/community/post/${postId}/`, {
+        const response = await fetch(`https://skinwise.tech/community/post/${postId}/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -213,7 +213,7 @@ export default function MyPostsScreen({ navigation }) {
         return;
       }
 
-      const response = await fetch(`http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/community/save-post/${postId}/`, {
+      const response = await fetch(`https://skinwise.tech/community/save-post/${postId}/`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${accessToken}`,

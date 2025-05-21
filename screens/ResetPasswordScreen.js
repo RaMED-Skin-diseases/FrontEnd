@@ -30,7 +30,7 @@ export default function PasswordResetScreen({ route, navigation }) {
 
     setLoading(true);
     try {
-      const response = await fetch('http://new-env.eba-6dsh89vt.eu-north-1.elasticbeanstalk.com/account/reset_password', {
+      const response = await fetch('https://skinwise.tech/account/reset_password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `username=${encodeURIComponent(email)}&new_password=${encodeURIComponent(password)}`
