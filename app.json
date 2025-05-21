@@ -6,24 +6,29 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.kareemabdelnabii.GP"
     },
     "ios": {
-      "jsEngine": "hermes"
+      "jsEngine": "hermes",
+      "bundleIdentifier": "com.kareemabdelnabii.GP"
     },
     "name": "GP",
     "slug": "GP",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/logo.png"
     },
     "plugins": [
       [
@@ -33,6 +38,11 @@
           "cameraPermission": "The app accesses your camera to let you take photos."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "1e23e994-ae00-4ee5-a53e-1088e219c7b1"
+      }
+    }
   }
 }
