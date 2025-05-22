@@ -13,25 +13,21 @@ export default function LandingScreen({ navigation }) {
       <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Login')}>
         <Text style={styles.buttonText}>Log in</Text>
       </TouchableOpacity>
+
       <View style={styles.footer}>
-        <Text 
-          style={styles.footerText} 
+        <TouchableOpacity
+          style={styles.roleButton}
           onPress={() => navigation.navigate('SignupPart1', { userRole: 'Patient' })}
         >
-          Patient
-        </Text>
-        <Text 
-          style={styles.footerText} 
+          <Text style={styles.roleButtonText}>Patient</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.roleButton}
           onPress={() => navigation.navigate('SignupPart1', { userRole: 'Doctor' })}
         >
-          Doctor
-        </Text>
-
-        {/* <View>
-      <Text>
-        Hermes Enabled: {global.HermesInternal ? 'Yes' : 'No'}
-      </Text>
-    </View> */}
+          <Text style={styles.roleButtonText}>Doctor</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -55,13 +51,14 @@ const styles = StyleSheet.create({
     color: '#888',
     marginBottom: 20,
     textAlign: 'center',
+    paddingHorizontal: 20,
   },
   image: {
     width: 420,
     height: 410,
     borderRadius: 8,
     marginBottom: 30,
-    marginTop: 20,  
+    marginTop: 20,
   },
   button: {
     backgroundColor: '#A0C4FF',
@@ -79,10 +76,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '80%',
-    paddingHorizontal: 20,
+    gap: 20,
   },
-  footerText: {
-    color: '#AAA',
+  roleButton: {
+    backgroundColor: '#A0C4FF',
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+    borderRadius: 8,
+  },
+  roleButtonText: {
+    color: '#FFFFFF',
     fontSize: 14,
+    fontWeight: 'bold',
   },
 });
