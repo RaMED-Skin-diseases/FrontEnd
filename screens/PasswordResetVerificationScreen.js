@@ -153,6 +153,12 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
+  image: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginBottom: 10,
+  },
   headerTitle: { fontSize: 28, fontWeight: 'bold', color: '#FFFFFF' },
   content: { flex: 1, padding: 20, alignItems: 'center', marginTop: 20 },
   title: { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 20 },

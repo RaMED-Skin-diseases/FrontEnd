@@ -10,6 +10,7 @@ import {
   ScrollView,
   Modal,
   TextInput,
+  Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { UserContext } from '../UserContext';
@@ -32,6 +33,7 @@ export default function AIPrediction({ navigation }) {
   const [areaGrowingShape, setAreaGrowingShape] = useState(null);
   const [experienceItching, setExperienceItching] = useState(null);
 
+  // Function to pick image from gallery
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -44,10 +46,37 @@ export default function AIPrediction({ navigation }) {
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.1,
+      // Add base64 option for web compatibility
+      base64: Platform.OS === 'web',
     });
 
     if (!result.canceled) {
-      setSelectedImage(result.assets[0].uri);
+      setSelectedImage(result.assets[0]);
+      setPrediction(null);
+      setProbability(null);
+    }
+  };
+
+  // New function to take a photo with camera
+  const takePhoto = async () => {
+    // Request camera permissions
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'We need access to your camera to continue.');
+      return;
+    }
+
+    // Launch camera
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.1,
+      // Add base64 option for web compatibility
+      base64: Platform.OS === 'web',
+    });
+
+    if (!result.canceled) {
+      setSelectedImage(result.assets[0]);
       setPrediction(null);
       setProbability(null);
     }
@@ -55,7 +84,7 @@ export default function AIPrediction({ navigation }) {
 
   const analyzeImage = async () => {
     if (!selectedImage) {
-      Alert.alert('No Image Selected', 'Please upload an image first.');
+      Alert.alert('No Image Selected', 'Please upload or take an image first.');
       return;
     }
 
@@ -118,8 +147,6 @@ export default function AIPrediction({ navigation }) {
     }
 }
 
-
-  
   const handleModalSubmit = async () => {
     console.log('Sunlight Duration:', sunlightDuration);
     console.log('Uses Sunscreen:', usesSunscreen ? 'Yes' : 'No');
@@ -132,24 +159,57 @@ export default function AIPrediction({ navigation }) {
   
     try {
       const formData = new FormData();
-      formData.append('file', {
-        uri: selectedImage,
-        name: 'upload.jpg',
-        type: 'file/jpeg',
-      });
+      
+      // Handle image data differently based on platform
+      if (Platform.OS === 'web') {
+        // For web, handle base64 image
+        if (selectedImage.base64) {
+          // Convert base64 to blob for web
+          const base64Response = await fetch(`data:image/jpeg;base64,${selectedImage.base64}`);
+          const blob = await base64Response.blob();
+          
+          // Create a file from the blob
+          const fileName = 'upload.jpg';
+          const file = new File([blob], fileName, { type: 'image/jpeg' });
+          
+          formData.append('file', file);
+        } else if (selectedImage.uri) {
+          // If base64 is not available but URI is, try to fetch the image and create a blob
+          try {
+            const response = await fetch(selectedImage.uri);
+            const blob = await response.blob();
+            formData.append('file', blob, 'upload.jpg');
+          } catch (error) {
+            console.error("Error creating blob from URI:", error);
+            Alert.alert('Error', 'Failed to process the image. Please try again.');
+            setIsLoading(false);
+            return;
+          }
+        }
+      } else {
+        // For native platforms (iOS/Android)
+        formData.append('file', {
+          uri: selectedImage.uri,
+          name: 'upload.jpg',
+          type: 'image/jpeg',
+        });
+      }
   
       const token = await AsyncStorage.getItem('accessToken');
-      // http://localhost:8000/predict/
+      
+      // Make the API request
       const response = await fetch('https://skinwise.tech/predict/', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
+          // Don't set Content-Type on web for multipart/form-data
+          // The browser will set it automatically with the correct boundary
+          ...(Platform.OS !== 'web' && { "Content-Type": "multipart/form-data" }),
         },
         body: formData,
       });
   
       console.log('Response:', response);
-      console.log(formData);
   
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -158,40 +218,26 @@ export default function AIPrediction({ navigation }) {
       const data = await response.json();
       console.log('Data:', data);
   
-      // Compare probabilities from tensorflow and torch predictions
-      // const tfProbability = parseFloat(data.tensorflow_prediction.probability) || 0;
-      // const torchProbability = parseFloat(data.torch_prediction.probability) || 0;
-  
-      // let predictedClass, probability;
-
-      let combined_results = combineResults(data.tensorflow_prediction.class,data.tensorflow_prediction.probability,data.torch_prediction.class,data.torch_prediction.probability)
+      let combined_results = combineResults(
+        data.tensorflow_prediction.class,
+        data.tensorflow_prediction.probability,
+        data.torch_prediction.class,
+        data.torch_prediction.probability
+      );
+      
       console.log('Combined Results:', combined_results);
       setPrediction(combined_results.final_class);
-      console.log(combined_results.confidence)
+      console.log(combined_results.confidence);
       setProbability(combined_results.confidence);
-
-
-
-      // if (tfProbability > torchProbability) {
-      //   predictedClass = data.tensorflow_prediction.class;
-      //   probability = data.tensorflow_prediction.probability;
-      // } else {
-      //   predictedClass = data.torch_prediction.class;
-      //   probability = data.torch_prediction.probability;
-      //   if (data.torch_prediction.message) {
-      //     predictedClass = `${predictedClass} (${data.torch_prediction.message})`;
-      //   }
-      // }
-  
   
     } catch (error) {
+      console.error("Analysis error:", error);
       Alert.alert('Error', error.message || 'Failed to analyze image.');
     } finally {
       setIsLoading(false);
     }
   };
   
-
   const removeImage = () => {
     setSelectedImage(null);
     setPrediction(null);
@@ -203,13 +249,13 @@ export default function AIPrediction({ navigation }) {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>AI Skin Analysis</Text>
-          <Text style={styles.headerSubtitle}>Upload a clear skin image for instant results</Text>
+          <Text style={styles.headerSubtitle}>Upload or take a clear skin image for instant results</Text>
         </View>
 
         <View style={styles.uploadContainer}>
           {selectedImage ? (
             <View style={styles.imageContainer}>
-              <Image source={{ uri: selectedImage }} style={styles.imagePreview} />
+              <Image source={{ uri: selectedImage.uri }} style={styles.imagePreview} />
               <TouchableOpacity
                 style={styles.removeIcon}
                 onPress={removeImage}
@@ -220,21 +266,36 @@ export default function AIPrediction({ navigation }) {
             </View>
           ) : (
             <View style={styles.placeholder}>
-              <Text style={styles.placeholderText}>Tap below to upload an image</Text>
+              <Text style={styles.placeholderText}>Tap below to upload or take an image</Text>
             </View>
           )}
 
-          <TouchableOpacity
-            style={styles.uploadButton}
-            onPress={pickImage}
-            activeOpacity={0.8}
-          >
-            <LinearGradient colors={['#007BFF', '#0056D2']} style={styles.gradientButton}>
-              <Text style={styles.uploadButtonText}>
-                {selectedImage ? 'Change Image' : 'Upload Image'}
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
+          <View style={styles.imageButtonsContainer}>
+            <TouchableOpacity
+              style={[styles.imageButton, { marginRight: 8 }]}
+              onPress={pickImage}
+              activeOpacity={0.8}
+            >
+              <LinearGradient colors={['#007BFF', '#0056D2']} style={styles.gradientButton}>
+                <Ionicons name="images-outline" size={20} color="#FFFFFF" style={styles.buttonIcon} />
+                <Text style={styles.imageButtonText}>Gallery</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Only show camera button if not on web or if web has camera support */}
+            {(Platform.OS !== 'web' || (Platform.OS === 'web' && navigator?.mediaDevices?.getUserMedia)) && (
+              <TouchableOpacity
+                style={[styles.imageButton, { marginLeft: 8 }]}
+                onPress={takePhoto}
+                activeOpacity={0.8}
+              >
+                <LinearGradient colors={['#28A745', '#218838']} style={styles.gradientButton}>
+                  <Ionicons name="camera-outline" size={20} color="#FFFFFF" style={styles.buttonIcon} />
+                  <Text style={styles.imageButtonText}>Camera</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {selectedImage && (
@@ -246,7 +307,6 @@ export default function AIPrediction({ navigation }) {
             >
               <Text style={styles.analyzeButtonText}>Analyze</Text>
             </TouchableOpacity>
-            
           </View>
         )}
 
@@ -285,7 +345,7 @@ export default function AIPrediction({ navigation }) {
 
               <Text style={styles.modalLabel}>How long are you subjected to sunlight daily?</Text>
               <Slider
-                style={{ width:330, height: 40 }}
+                style={{ width:'100%', height: 40 }}
                 minimumValue={0}
                 maximumValue={15}
                 minimumTrackTintColor="#0000FF"
@@ -434,9 +494,33 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 2,
   },
-  uploadButton: { borderRadius: 12, overflow: 'hidden' },
-  gradientButton: { paddingVertical: 12, paddingHorizontal: 30 },
-  uploadButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600', textAlign: 'center' },
+  imageButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  imageButton: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    maxWidth: 150,
+  },
+  gradientButton: { 
+    paddingVertical: 12, 
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
+  imageButtonText: { 
+    color: '#FFFFFF', 
+    fontSize: 16, 
+    fontWeight: '600', 
+    textAlign: 'center' 
+  },
   actionButtons: { flexDirection: 'row', justifyContent: 'center', marginBottom: 20 },
   analyzeButton: {
     flex: 1,
@@ -446,107 +530,70 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.2,
-    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
     elevation: 3,
   },
   analyzeButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   loadingContainer: { alignItems: 'center', marginVertical: 20 },
-  loadingText: { fontSize: 16, color: '#007BFF', marginTop: 10 },
+  loadingText: { marginTop: 10, fontSize: 16, color: '#6B7280' },
   resultCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 5,
-    marginTop: 20,
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    elevation: 4,
+    marginTop: 10,
   },
   resultTitle: { fontSize: 20, fontWeight: '700', color: '#1E2A3C', marginBottom: 15 },
-  resultRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  resultLabel: { fontSize: 16, color: '#6B7280', fontWeight: '500' },
-  resultValue: { fontSize: 16, color: '#007BFF', fontWeight: '600', flexShrink: 1, textAlign: 'right' },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  modalContainer: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 20,
-    elevation: 10,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  modalLabel: {
-    fontSize: 16,
-    marginTop: 10,
-    marginBottom: 5,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 10,
-    padding: 10,
-    fontSize: 16,
-  },
-  optionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 10,
-  },
-  optionButton: {
-    flex: 1,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 10,
-    alignItems: 'center',
-    marginHorizontal: 5,
-  },
-  optionSelected: {
-    backgroundColor: '#007BFF',
-    borderColor: '#007BFF',
-  },
-  optionText: {
-    color: '#333',
-    fontSize: 16,
-  },
-  submitButton: {
+  resultRow: { flexDirection: 'row', marginBottom: 10 },
+  resultLabel: { fontSize: 16, color: '#6B7280', width: 100 },
+  resultValue: { fontSize: 16, fontWeight: '600', color: '#1E2A3C', flex: 1 },
+  chatButton: {
     backgroundColor: '#007BFF',
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
     marginTop: 15,
   },
-  submitButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },valueText: {
-    fontSize: 16,
-    color: '#000',
-    marginTop: 10,
-    textAlign: 'center',
+  chatButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  chatButton: {
-    marginTop: 20,
-    backgroundColor: '#007BFF',
+  modalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    width: '90%',
+    maxWidth: 500,
+  },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: '#1E2A3C', marginBottom: 20, textAlign: 'center' },
+  modalLabel: { fontSize: 16, color: '#6B7280', marginBottom: 10 },
+  valueText: { fontSize: 16, color: '#1E2A3C', textAlign: 'center', marginBottom: 15 },
+  optionButtons: { flexDirection: 'row', marginBottom: 15 },
+  optionButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    marginHorizontal: 5,
+    borderRadius: 8,
+  },
+  optionSelected: { backgroundColor: '#A0C4FF', borderColor: '#007BFF' },
+  optionText: { fontSize: 16, color: '#1E2A3C' },
+  submitButton: {
+    backgroundColor: '#A0C4FF',
     paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-    alignSelf: 'center',
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 20,
   },
-  chatButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  
+  submitButtonText: { color: '#1E2A3C', fontSize: 16, fontWeight: '600' },
 });

@@ -82,6 +82,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', 
     backgroundColor: '#FFFFFF',
   },
+  image: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginBottom: 10,
+  },
   header: {
     position: 'absolute',
     top: 0,

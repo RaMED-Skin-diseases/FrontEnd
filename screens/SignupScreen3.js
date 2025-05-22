@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Image, ScrollView, ActivityIndicator } from 'react-native'; // Import ActivityIndicator
 import * as ImagePicker from 'expo-image-picker';
 
 export default function SignupScreenPart3({ route, navigation }) {
@@ -11,6 +11,8 @@ export default function SignupScreenPart3({ route, navigation }) {
     clinicDetails: '',
     verificationImage: null,
   });
+
+  const [isLoading, setIsLoading] = useState(false); // New state for loading
 
   const handleChange = (field, value) => {
     setDoctorInfo({ ...doctorInfo, [field]: value });
@@ -38,7 +40,9 @@ export default function SignupScreenPart3({ route, navigation }) {
       Alert.alert("Missing Fields", "Please complete all the fields and upload your verification image.");
       return;
     }
-  
+
+    setIsLoading(true); // Set loading to true when submission starts
+
     const formData = new FormData();
     formData.append('f_name', form.firstName);
     formData.append('l_name', form.lastName);
@@ -51,16 +55,15 @@ export default function SignupScreenPart3({ route, navigation }) {
     formData.append('info', doctorInfo.bio);
     formData.append('specialization', doctorInfo.specialization);
     formData.append('clinic_details', doctorInfo.clinicDetails);
-  
-    // ⚠️ Only works if image URI is a local file path (e.g., from ImagePicker)
+
     formData.append('verification_image', {
       uri: doctorInfo.verificationImage.uri,
-      type: 'image/jpeg', // or 'image/png' based on your image type
+      type: 'image/jpeg',
       name: 'verification.jpg',
     });
-  
+
     console.log('Sending FormData...');
-  
+
     try {
       const response = await fetch('https://skinwise.tech/account/signup', {
         method: 'POST',
@@ -69,10 +72,10 @@ export default function SignupScreenPart3({ route, navigation }) {
         },
         body: formData,
       });
-  
+
       const responseText = await response.text();
       console.log("Response Text:", responseText);
-  
+
       if (response.ok) {
         const result = JSON.parse(responseText);
         Alert.alert('Success', 'Account created successfully. Please verify your email.');
@@ -84,18 +87,21 @@ export default function SignupScreenPart3({ route, navigation }) {
     } catch (error) {
       console.error("Error during fetch:", error);
       Alert.alert('Error', error.message || 'An unknown error occurred during the fetch operation.');
+    } finally {
+      setIsLoading(false); // Set loading to false when submission finishes (success or error)
     }
   };
-  
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <Image source={require('../assets/Image.jpeg')} style={styles.image} />
         <Text style={styles.headerTitle}>SkinWise</Text>
       </View>
 
-      <View style={styles.formContainer}>
+      {/* Scrollable Form Content */}
+      <ScrollView contentContainerStyle={styles.formContainer}>
         <Text style={styles.title}>Doctor Details</Text>
 
         <TextInput
@@ -121,7 +127,7 @@ export default function SignupScreenPart3({ route, navigation }) {
           multiline
         />
 
-        <TouchableOpacity style={styles.button} onPress={pickImage}>
+        <TouchableOpacity style={styles.button} onPress={pickImage} disabled={isLoading}>
           <Text style={styles.buttonText}>
             {doctorInfo.verificationImage ? "Change Verification Image" : "Upload Verification Image"}
           </Text>
@@ -130,58 +136,36 @@ export default function SignupScreenPart3({ route, navigation }) {
         {doctorInfo.verificationImage && (
           <Image
             source={{ uri: doctorInfo.verificationImage.uri }}
-            style={{ width: '100%', height: 200, borderRadius: 8, marginTop: 10 }}
+            style={styles.verificationImage}
           />
         )}
 
-        <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-          <Text style={styles.buttonText}>Submit Doctor Info</Text>
+        <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={isLoading}>
+          {isLoading ? (
+            <ActivityIndicator color="#FFFFFF" /> // Show loading indicator
+          ) : (
+            <Text style={styles.buttonText}>Submit Doctor Info</Text>
+          )}
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    padding: 20, 
-    justifyContent: 'center', 
-    backgroundColor: '#FFFFFF' 
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
   },
-  title: { 
-    fontSize: 24, 
-    fontWeight: 'bold', 
-    color: '#333', 
-    marginBottom: 20, 
-    textAlign: 'center' 
-  },
-  input: { 
-    borderWidth: 1, 
-    borderColor: '#DDD', 
-    borderRadius: 8, 
-    padding: 10, 
-    marginBottom: 15 
-  },
-  button: { 
-    backgroundColor: '#A0C4FF', 
-    paddingVertical: 12, 
-    borderRadius: 8, 
-    alignItems: 'center', 
-    marginTop: 20 
-  },
-  buttonText: { 
-    color: '#FFFFFF', 
-    fontSize: 16, 
-    fontWeight: 'bold' 
+  image: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginBottom: 10,
   },
   header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 250,
-    backgroundColor: "#A0C4FF",
+    height: 250, // Reduced height for better space management
+    backgroundColor: '#A0C4FF',
     justifyContent: 'center',
     alignItems: 'center',
     borderBottomLeftRadius: 20,
@@ -193,9 +177,41 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   formContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingTop: 100,
-    marginTop: 50,
+    padding: 20,
+    paddingTop: 10, // Reduced padding to avoid excessive spacing
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
+    backgroundColor: '#F9F9F9',
+  },
+  button: {
+    backgroundColor: '#A0C4FF',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  verificationImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    marginVertical: 10,
+    resizeMode: 'contain', // Ensure image scales properly
   },
 });

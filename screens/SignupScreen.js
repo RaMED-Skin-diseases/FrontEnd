@@ -30,7 +30,6 @@ export default function SignupScreenPart1({ navigation, route }) {
   const [showDateModal, setShowDateModal] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
   
-  // Use default styles for the date picker
   const defaultStyles = useDefaultStyles();
 
   const handleInputChange = (field, value) => {

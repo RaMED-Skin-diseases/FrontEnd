@@ -195,6 +195,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center'
   },
+  image: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginBottom: 10,
+  },
   input: {
     borderWidth: 1,
     borderColor: '#DDD',
@@ -202,20 +208,20 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 15
   },
-  passwordInputContainer: { // New style for password input and icon
+  passwordInputContainer: { 
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#DDD',
     borderRadius: 8,
-    marginBottom: 15, // Adjusted to match other input margins
+    marginBottom: 15, 
   },
-  passwordInput: { // Style for the actual password TextInput
-    flex: 1, // Takes up remaining space
+  passwordInput: { 
+    flex: 1, 
     padding: 10,
     fontSize: 16,
   },
-  eyeIcon: { // Style for the eye icon TouchableOpacity
+  eyeIcon: { 
     padding: 10,
   },
   button: {

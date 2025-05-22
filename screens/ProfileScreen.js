@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Modal,
+  Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
@@ -19,6 +21,8 @@ const SPECIAL_MESSAGE = "The model could not confidently identify the disease. Y
 const ProfileScreen = () => {
   const [diagnoses, setDiagnoses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectedDiagnosisId, setSelectedDiagnosisId] = useState(null);
 
   const fetchDiagnoses = async () => {
     try {
@@ -45,34 +49,107 @@ const ProfileScreen = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    Alert.alert('Delete Diagnosis', 'Are you sure you want to delete this entry?', [
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            const token = await AsyncStorage.getItem('accessToken');
-            await fetch(
-              `https://skinwise.tech/detect/delete-diagnosis/${id}/`,
-              {
-                method: 'DELETE',
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-            setDiagnoses((prev) => prev.filter((d) => d.id !== id));
-          } catch (err) {
-            console.error('Failed to delete:', err);
-          }
+  // Custom confirmation dialog that works on all platforms
+  const ConfirmationModal = () => (
+    <Modal
+      visible={showConfirmModal}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowConfirmModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Delete Diagnosis</Text>
+          <Text style={styles.modalMessage}>
+            Are you sure you want to delete this entry?
+          </Text>
+          <View style={styles.modalButtons}>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.cancelButton]}
+              onPress={() => {
+                setShowConfirmModal(false);
+                setSelectedDiagnosisId(null);
+              }}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.deleteButton]}
+              onPress={() => {
+                setShowConfirmModal(false);
+                if (selectedDiagnosisId) {
+                  performDelete(selectedDiagnosisId);
+                }
+              }}
+            >
+              <Text style={styles.deleteButtonText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const handleDelete = (id) => {
+    // For web, use our custom modal
+    if (Platform.OS === 'web') {
+      setSelectedDiagnosisId(id);
+      setShowConfirmModal(true);
+    } else {
+      // For native platforms, use Alert
+      Alert.alert('Delete Diagnosis', 'Are you sure you want to delete this entry?', [
+        {
+          text: 'Cancel',
+          style: 'cancel',
         },
-      },
-    ]);
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => performDelete(id),
+        },
+      ]);
+    }
+  };
+
+  // Separate the actual delete operation
+  const performDelete = async (id) => {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      const response = await fetch(
+        `https://skinwise.tech/detect/delete-diagnosis/${id}/`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      
+      if (response.ok) {
+        console.log('Successfully deleted diagnosis:', id);
+        setDiagnoses((prev) => prev.filter((d) => d.id !== id));
+      } else {
+        console.error('Failed to delete diagnosis. Status:', response.status);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        
+        // Show error message
+        if (Platform.OS === 'web') {
+          alert('Failed to delete. Please try again.');
+        } else {
+          Alert.alert('Error', 'Failed to delete. Please try again.');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to delete:', err);
+      
+      // Show error message
+      if (Platform.OS === 'web') {
+        alert('An error occurred. Please try again.');
+      } else {
+        Alert.alert('Error', 'An error occurred. Please try again.');
+      }
+    }
   };
 
   useEffect(() => {
@@ -87,6 +164,9 @@ const ProfileScreen = () => {
           Track your skin condition progression and improvement over time.
         </Text>
       </View>
+
+      {/* Custom confirmation modal for web */}
+      <ConfirmationModal />
 
       {loading ? (
         <ActivityIndicator size="large" color="#3E4A59" />
@@ -194,5 +274,60 @@ const styles = StyleSheet.create({
   noDataText: {
     fontSize: 16,
     color: '#6C757D',
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    width: '80%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#3E4A59',
+    marginBottom: 10,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#6C757D',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#f8f9fa',
+    borderWidth: 1,
+    borderColor: '#dee2e6',
+  },
+  cancelButtonText: {
+    color: '#6c757d',
+    fontWeight: '500',
+  },
+  deleteButton: {
+    backgroundColor: '#ff6b6b',
+  },
+  deleteButtonText: {
+    color: 'white',
+    fontWeight: '500',
   },
 });
