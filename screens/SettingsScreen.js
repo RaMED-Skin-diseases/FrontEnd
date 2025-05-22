@@ -15,7 +15,10 @@ import {
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ScrollView } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+
+// Import the cross-platform date picker and dayjs
+import DateTimePicker, { useDefaultStyles } from 'react-native-ui-datepicker';
+import dayjs from 'dayjs';
 
 const SettingsScreen = ({ navigation }) => {
   const [userInfo, setUserInfo] = useState(null);
@@ -25,6 +28,9 @@ const SettingsScreen = ({ navigation }) => {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
+  
+  // Get default styles for the date picker
+  const defaultStyles = useDefaultStyles();
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -52,7 +58,7 @@ const SettingsScreen = ({ navigation }) => {
         );
 
         console.log('Response status:', response.status);
-        console.log(accessToken)
+        console.log(accessToken);
         const data = await response.json();
         console.log('User data:', data);
         if (response.ok && data.user) {
@@ -100,6 +106,13 @@ const SettingsScreen = ({ navigation }) => {
 
   const handleInputChange = (field, value) => {
     setEditedInfo(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Handle date change from the date picker
+  const handleDateChange = ({ date }) => {
+    if (date) {
+      setTempDate(date);
+    }
   };
 
   const handleSave = async () => {
@@ -201,21 +214,28 @@ const SettingsScreen = ({ navigation }) => {
         <View style={styles.infoRow}>
           <MaterialIcons name={icon} size={22} color="#555" />
           <Text style={styles.label}>{label}:</Text>
-          <Text style={styles.value}>{userInfo[field]}</Text>
+          <Text style={styles.value} numberOfLines={1} ellipsizeMode="tail">
+            {userInfo[field]}
+          </Text>
         </View>
       );
     }
-
+  
     if (field === 'birthDate' && isEditing) {
       return (
         <View style={styles.infoRow}>
           <MaterialIcons name={icon} size={22} color="#555" />
           <Text style={styles.label}>{label}:</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => {
-              setTempDate(new Date(editedInfo.birthDate || Date.now()));
+              // Parse the date if it exists, otherwise use current date
+              if (editedInfo.birthDate && editedInfo.birthDate !== 'N/A') {
+                setTempDate(new Date(editedInfo.birthDate));
+              } else {
+                setTempDate(new Date());
+              }
               setShowDatePicker(true);
-            }} 
+            }}
             style={styles.dateInput}
           >
             <Text style={styles.dateText}>{editedInfo.birthDate || 'Select Date'}</Text>
@@ -224,7 +244,7 @@ const SettingsScreen = ({ navigation }) => {
         </View>
       );
     }
-
+  
     if (field === 'gender' && isEditing) {
       return (
         <View style={styles.infoRow}>
@@ -247,7 +267,7 @@ const SettingsScreen = ({ navigation }) => {
         </View>
       );
     }
-
+  
     return (
       <View style={styles.infoRow}>
         <MaterialIcons name={icon} size={22} color="#555" />
@@ -260,7 +280,9 @@ const SettingsScreen = ({ navigation }) => {
             placeholder={label}
           />
         ) : (
-          <Text style={styles.value}>{userInfo[field]}</Text>
+          <Text style={styles.value} numberOfLines={1} ellipsizeMode="tail">
+            {userInfo[field]}
+          </Text>
         )}
       </View>
     );
@@ -286,7 +308,7 @@ const SettingsScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Add My Posts Navigation Button */}
+        {/* My Posts Navigation Button */}
         {userInfo && (
           <TouchableOpacity 
             style={styles.navButton} 
@@ -298,7 +320,7 @@ const SettingsScreen = ({ navigation }) => {
           </TouchableOpacity>
         )}
 
-        {/* Add Saved Posts Navigation Button */}
+        {/* Saved Posts Navigation Button */}
         {userInfo && (
           <TouchableOpacity 
             style={styles.navButton} 
@@ -367,27 +389,37 @@ const SettingsScreen = ({ navigation }) => {
           <Text style={styles.errorText}>Failed to load user data</Text>
         )}
 
-        <Modal visible={showDatePicker} transparent animationType="slide">
-          <View style={styles.modalContainer}>
-            <View style={styles.pickerContainer}>
+        {/* Cross-platform Date Picker Modal */}
+        <Modal visible={showDatePicker} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+
               <DateTimePicker
-                mode="date"
-                value={tempDate}
-                display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
-                maximumDate={new Date()}
-                onChange={(event, selectedDate) => {
-                  if (selectedDate) {
-                    setTempDate(selectedDate);
-                  }
-                }}
+                mode="single"
+                date={tempDate}
+                onChange={handleDateChange}
+                styles={defaultStyles}
+                minDate={new Date('1900-01-01')}
+                maxDate={new Date()}
               />
-              <View style={styles.modalButtons}>
-                <Button title="Cancel" onPress={() => setShowDatePicker(false)} />
-                <Button title="Confirm" onPress={() => {
-                  const formattedDate = tempDate.toISOString().split('T')[0];
-                  handleInputChange('birthDate', formattedDate);
-                  setShowDatePicker(false);
-                }} />
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={() => setShowDatePicker(false)}
+                >
+                  <Text style={styles.buttonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={() => {
+                    // Format the date using dayjs for consistency
+                    const formattedDate = dayjs(tempDate).format('YYYY-MM-DD');
+                    handleInputChange('birthDate', formattedDate);
+                    setShowDatePicker(false);
+                  }}
+                >
+                  <Text style={styles.buttonText}>Confirm</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </View>
@@ -494,7 +526,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
     marginLeft: 15,
-    flex: 1,
   },
   value: {
     fontSize: 16,
@@ -546,22 +577,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  pickerContainer: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-  },
   navButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -584,9 +599,34 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
-
-
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    width: 300,
+    alignItems: 'center',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 20,
+    width: '100%',
+  },
+  button: {
+    padding: 10,
+    backgroundColor: '#007AFF',
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
 });
 
 export default SettingsScreen;
-

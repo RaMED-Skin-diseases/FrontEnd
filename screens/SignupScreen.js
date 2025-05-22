@@ -12,7 +12,10 @@ import {
   Modal,
   Platform,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+
+
+import DateTimePicker, { useDefaultStyles } from 'react-native-ui-datepicker';
+import dayjs from 'dayjs';
 
 export default function SignupScreenPart1({ navigation, route }) {
   const userRole = route.params?.userRole || 'User';
@@ -26,13 +29,23 @@ export default function SignupScreenPart1({ navigation, route }) {
 
   const [showDateModal, setShowDateModal] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
+  
+  // Use default styles for the date picker
+  const defaultStyles = useDefaultStyles();
 
   const handleInputChange = (field, value) => {
     setForm({ ...form, [field]: value });
   };
 
+  const handleDateChange = ({ date }) => {
+    if (date) {
+      setTempDate(date);
+    }
+  };
+
   const handleDateConfirm = () => {
-    const formattedDate = tempDate.toISOString().split('T')[0];
+    // Format the date as YYYY-MM-DD
+    const formattedDate = dayjs(tempDate).format('YYYY-MM-DD');
     handleInputChange('dateOfBirth', formattedDate);
     setShowDateModal(false);
   };
@@ -101,19 +114,18 @@ export default function SignupScreenPart1({ navigation, route }) {
           </Text>
         </TouchableOpacity>
 
-        {/* Modal Date Picker */}
+
         <Modal visible={showDateModal} transparent animationType="slide">
           <View style={styles.modalContainer}>
             <View style={styles.pickerContainer}>
+              {/* Apply default styles and ensure date is properly bound */}
               <DateTimePicker
-                mode="date"
-                value={tempDate}
-                display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
-                onChange={(event, selectedDate) => {
-                  if (selectedDate) {
-                    setTempDate(selectedDate);
-                  }
-                }}
+                mode="single"
+                date={tempDate}
+                onChange={handleDateChange}
+                styles={defaultStyles}
+                minDate={new Date(1900, 0, 1)}
+                maxDate={new Date()}
               />
               <View style={styles.modalButtons}>
                 <Button title="Cancel" onPress={() => setShowDateModal(false)} />
@@ -130,7 +142,6 @@ export default function SignupScreenPart1({ navigation, route }) {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -228,6 +239,4 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 10,
   },
-  
 });
-
