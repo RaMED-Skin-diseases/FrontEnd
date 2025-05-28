@@ -26,7 +26,6 @@ export default function PasswordResetScreen({ route, navigation }) {
         text1: 'Error',
         text2: 'Password must be at least 6 characters long.'
       });
-
       return;
     }
 
