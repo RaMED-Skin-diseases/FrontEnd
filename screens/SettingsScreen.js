@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,8 @@ import {
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ScrollView } from 'react-native';
+import { AuthContext } from '../AuthContext'; // Import AuthContext
+import Toast from 'react-native-toast-message';
 
 // Import the cross-platform date picker and dayjs
 import DateTimePicker, { useDefaultStyles } from 'react-native-ui-datepicker';
@@ -28,6 +30,7 @@ const SettingsScreen = ({ navigation }) => {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
+  const { logout } = useContext(AuthContext); // Use AuthContext for logout
   
   // Get default styles for the date picker
   const defaultStyles = useDefaultStyles();
@@ -39,7 +42,12 @@ const SettingsScreen = ({ navigation }) => {
         const accessToken = await AsyncStorage.getItem('accessToken');
 
         if (!userData || !accessToken) {
-          Alert.alert('Error', 'User not authenticated');
+          //Alert.alert('Error', 'User not authenticated');
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'User not authenticated. Please log in again.',
+          });
           setLoading(false);
           return;
         }
@@ -85,10 +93,20 @@ const SettingsScreen = ({ navigation }) => {
             useNativeDriver: true,
           }).start();
         } else {
-          Alert.alert('Error', 'Failed to retrieve user data');
+          //Alert.alert('Error', 'Failed to retrieve user data');
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: data.error || 'Failed to retrieve user data. Please try again.',
+          });
         }
       } catch (error) {
-        Alert.alert('Error', 'Something went wrong');
+        //Alert.alert('Error', 'Something went wrong');
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Something went wrong while fetching user profile. Please try again.',
+        });
       } finally {
         setLoading(false);
       }
@@ -158,7 +176,12 @@ const SettingsScreen = ({ navigation }) => {
       if (response.ok) {
         setUserInfo(editedInfo);
         setIsEditing(false);
-        Alert.alert('Success', 'Profile updated successfully');
+        //Alert.alert('Success', 'Profile updated successfully');
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Profile updated successfully',
+        });
 
         if (changes.username) {
           const userData = await AsyncStorage.getItem('userData');
@@ -167,44 +190,59 @@ const SettingsScreen = ({ navigation }) => {
           await AsyncStorage.setItem('userData', JSON.stringify(parsedData));
         }
       } else {
-        Alert.alert('Error', data.error || 'Failed to update profile');
+        //Alert.alert('Error', data.error || 'Failed to update profile');
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: data.error || 'Failed to update profile. Please try again.',
+        });
       }
     } catch (error) {
-      Alert.alert('Error', 'Something went wrong while updating');
+      //Alert.alert('Error', 'Something went wrong while updating');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Something went wrong while updating your profile. Please try again.',
+      });
     }
   };
 
   const handleLogout = async () => {
-    const accessToken = await AsyncStorage.getItem('accessToken');
-    const refreshToken = await AsyncStorage.getItem('refreshToken');
-    const bodyToSend = {
-      access: accessToken,
-      refresh: refreshToken,
-    };
-
     try {
-      const response = await fetch('https://skinwise.tech/account/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          "Authorization": `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(bodyToSend),
-      });
+      // Get tokens for API call
+      const accessToken = await AsyncStorage.getItem('accessToken');
+      const refreshToken = await AsyncStorage.getItem('refreshToken');
+      
+      if (accessToken && refreshToken) {
+        try {
+          await fetch('https://skinwise.tech/account/logout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              "Authorization": `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({
+              access: accessToken,
+              refresh: refreshToken,
+            }),
+          });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        await AsyncStorage.removeItem('accessToken');
-        await AsyncStorage.removeItem('refreshToken');
-        await AsyncStorage.removeItem('userData');
-
-        navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
-      } else {
-        Alert.alert('Error', data.message || 'Logout failed. Please try again.');
+        } catch (error) {
+          console.error('Logout API call failed:', error);
+        }
       }
+      
+
+      await logout();
+      
+ 
     } catch (error) {
-      Alert.alert('Error', 'An error occurred. Please check your connection and try again.');
+      //Alert.alert('Error', 'An error occurred during logout. Please try again.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'An error occurred during logout. Please try again.',
+      });
     }
   };
 
@@ -475,11 +513,10 @@ const styles = StyleSheet.create({
     padding: 30,
     borderRadius: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 4,
-    marginTop: 20,
+    shadowRadius: 15,
+    elevation: 5,
   },
   profileHeader: {
     alignItems: 'center',
@@ -490,114 +527,114 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginTop: 15,
+    textAlign: 'center',
   },
   userRole: {
     fontSize: 16,
-    color: '#777',
+    color: '#666',
     marginTop: 5,
   },
   verificationBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
   },
   verifiedText: {
     color: 'green',
     marginLeft: 5,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   notVerifiedText: {
     color: 'red',
     marginLeft: 5,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   infoSection: {
-    marginTop: 10,
+    marginTop: 20,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EFEFEF',
+    marginBottom: 20,
   },
   label: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginLeft: 15,
+    color: '#555',
+    width: 100,
+    marginLeft: 10,
   },
   value: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'right',
+    color: '#333',
     flex: 1,
+    fontWeight: '500',
   },
   input: {
     flex: 1,
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 8,
+    padding: 10,
     fontSize: 16,
-    color: '#333',
-    backgroundColor: '#F0F0F0',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 5,
   },
   dateInput: {
     flex: 1,
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F0F0F0',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 8,
+    padding: 10,
   },
   dateText: {
-    flex: 1,
     fontSize: 16,
-    color: '#333',
   },
   genderToggle: {
-    flexDirection: 'row',
     flex: 1,
-    justifyContent: 'flex-end',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
   },
   genderButton: {
-    padding: 5,
-    marginLeft: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#555',
-    borderRadius: 5,
+    borderColor: '#DDD',
   },
   selectedGender: {
-    backgroundColor: '#A0C4FF',
+    backgroundColor: '#4A90E2',
+    borderColor: '#4A90E2',
   },
   errorText: {
+    fontSize: 18,
     color: 'red',
-    fontSize: 16,
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: 50,
   },
   navButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    marginTop: 20,
-    marginBottom: 10,
+    padding: 15,
+    borderRadius: 15,
+    marginBottom: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 5,
     elevation: 2,
   },
   navButtonText: {
     flex: 1,
-    marginLeft: 15,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#333',
+    marginLeft: 15,
   },
   modalOverlay: {
     flex: 1,
@@ -606,26 +643,32 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    width: '90%',
+    backgroundColor: 'white',
+    borderRadius: 20,
     padding: 20,
-    borderRadius: 10,
-    width: 300,
-    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     marginTop: 20,
-    width: '100%',
   },
   button: {
+    flex: 1,
+    margin: 5,
     padding: 10,
-    backgroundColor: '#007AFF',
-    borderRadius: 5,
+    borderRadius: 8,
+    backgroundColor: '#4A90E2',
+    alignItems: 'center',
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 

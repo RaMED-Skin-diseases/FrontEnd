@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Image, ScrollView, ActivityIndicator } from 'react-native'; // Import ActivityIndicator
 import * as ImagePicker from 'expo-image-picker';
-
+import Toast from 'react-native-toast-message';
 export default function SignupScreenPart3({ route, navigation }) {
   const { form } = route.params;
 
@@ -21,7 +21,12 @@ export default function SignupScreenPart3({ route, navigation }) {
   const pickImage = async () => {
     let permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("Permission required", "Please allow access to photo library to upload verification image.");
+      //Alert.alert("Permission required", "Please allow access to photo library to upload verification image.");
+      Toast.show({
+        type: 'error',
+        text1: 'Permission Required',
+        text2: 'Please allow access to photo library to upload verification image.',
+      });
       return;
     }
 
@@ -37,7 +42,12 @@ export default function SignupScreenPart3({ route, navigation }) {
 
   const handleSubmit = async () => {
     if (!doctorInfo.bio || !doctorInfo.specialization || !doctorInfo.clinicDetails || !doctorInfo.verificationImage) {
-      Alert.alert("Missing Fields", "Please complete all the fields and upload your verification image.");
+      //Alert.alert("Missing Fields", "Please complete all the fields and upload your verification image.");
+      Toast.show({
+        type: 'error',
+        text1: 'Missing Fields',
+        text2: 'Please complete all the fields and upload your verification image.',
+      });
       return;
     }
 
@@ -78,15 +88,30 @@ export default function SignupScreenPart3({ route, navigation }) {
 
       if (response.ok) {
         const result = JSON.parse(responseText);
-        Alert.alert('Success', 'Account created successfully. Please verify your email.');
+        //Alert.alert('Success', 'Account created successfully. Please verify your email.');
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Account created successfully. Please verify your email.',
+        });
         navigation.navigate('EmailVerification', { email: form.email, username: form.username });
       } else {
         console.error("Error response from server:", responseText);
-        Alert.alert('Error', 'Failed to create account. Please try again later.');
+        //Alert.alert('Error', 'Failed to create account. Please try again later.');
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to create account. Please try again later.',
+        });
       }
     } catch (error) {
       console.error("Error during fetch:", error);
-      Alert.alert('Error', error.message || 'An unknown error occurred during the fetch operation.');
+      //Alert.alert('Error', error.message || 'An unknown error occurred during the fetch operation.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.message || 'An unknown error occurred during the fetch operation.',
+      });
     } finally {
       setIsLoading(false); // Set loading to false when submission finishes (success or error)
     }

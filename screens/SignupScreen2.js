@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // Import Ionicons
+import { FontAwesome } from '@expo/vector-icons'; 
+import Toast from 'react-native-toast-message';
 
 export default function SignupScreenPart2({ route, navigation }) {
   const { form: formData } = route.params;
@@ -17,17 +18,16 @@ export default function SignupScreenPart2({ route, navigation }) {
     confirmPassword: '',
   });
 
-  // New state for password visibility
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
 
   const handleInputChange = (field, value) => {
     setForm({ ...form, [field]: value });
   };
 
   const validateAndSubmit = async () => {
-    const { username, email, password, confirmPassword, firstName, lastName, dateOfBirth, userRole , gender } = form;
+    const { username, email, password, confirmPassword, firstName, lastName, dateOfBirth, userRole, gender } = form;
 
     const missingFields = [];
     if (!username) missingFields.push('Username');
@@ -37,25 +37,40 @@ export default function SignupScreenPart2({ route, navigation }) {
     if (!gender) missingFields.push('Gender');
 
     if (missingFields.length > 0) {
-      Alert.alert('Missing Fields', `Please fill in the following fields:\n${missingFields.join(', ')}`);
+      //Alert.alert('Missing Fields', `Please fill in the following fields:\n${missingFields.join(', ')}`);
+      Toast.show({
+        type: 'error',
+        text1: 'Missing Fields',
+        text2: `Please fill in the following fields:\n${missingFields.join(', ')}`,
+      });
       return;
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+      //Alert.alert('Error', 'Please enter a valid email address');
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Email',
+        text2: 'Please enter a valid email address.',
+      });
       return;
     }
 
     // Validate that passwords match
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      //Alert.alert('Error', 'Passwords do not match');
+      Toast.show({
+        type: 'error',
+        text1: 'Password Mismatch',
+        text2: 'The passwords you entered do not match.',
+      });
       return;
     }
 
     console.log('userRole', userRole);
-    if(userRole==='Doctor'){
+    if (userRole === 'Doctor') {
       navigation.navigate('SignupPart3', { form });
       return;
     }
@@ -80,23 +95,42 @@ export default function SignupScreenPart2({ route, navigation }) {
       if (response.ok) {
         try {
           const result = JSON.parse(responseText);
-          Alert.alert('Success', 'Account created successfully. Please verify your email.');
+          //Alert.alert('Success', 'Account created successfully. Please verify your email.');
+          Toast.show({
+            type: 'success',
+            text1: 'Success',
+            text2: 'Account created successfully. Please verify your email.',
+          });
           console.log(form.email, form.username);
           navigation.navigate('EmailVerification', { email: form.email, username: form.username });
         } catch (jsonError) {
           console.error("Error parsing JSON", jsonError);
-          Alert.alert('Error', 'Failed to parse response from the server.');
+          //Alert.alert('Error', 'Failed to parse response from the server.');
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'Failed to parse response from the server.',
+          });
         }
       } else {
         console.error("Error response from server:", responseText);
-        Alert.alert('Error', 'Failed to create account. Please try again later.');
+        //Alert.alert('Error', 'Failed to create account. Please try again later.');
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to create account. Please try again later.',
+        });
       }
     } catch (error) {
       console.error("Error during fetch:", error);
-      Alert.alert('Error', error.message || 'An unknown error occurred during the fetch operation.');
+      //Alert.alert('Error', error.message || 'An unknown error occurred during the fetch operation.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.message || 'An unknown error occurred during the fetch operation.',
+      });
     }
   };
-
 
   return (
     <View style={styles.container}>
@@ -141,8 +175,8 @@ export default function SignupScreenPart2({ route, navigation }) {
             onPress={() => setShowPassword(!showPassword)}
             style={styles.eyeIcon}
           >
-            <Ionicons
-              name={showPassword ? 'eye-off' : 'eye'}
+            <FontAwesome
+              name={showPassword ? 'eye-slash' : 'eye'} // Changed from eye-off/eye
               size={24}
               color="gray"
             />
@@ -164,14 +198,13 @@ export default function SignupScreenPart2({ route, navigation }) {
             onPress={() => setShowConfirmPassword(!showConfirmPassword)}
             style={styles.eyeIcon}
           >
-            <Ionicons
-              name={showConfirmPassword ? 'eye-off' : 'eye'}
+            <FontAwesome
+              name={showConfirmPassword ? 'eye-slash' : 'eye'} // Changed from eye-off/eye
               size={24}
               color="gray"
             />
           </TouchableOpacity>
         </View>
-
 
         <TouchableOpacity style={styles.button} onPress={validateAndSubmit}>
           <Text style={styles.buttonText}>Register</Text>

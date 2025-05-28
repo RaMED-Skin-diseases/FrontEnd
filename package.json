@@ -46,6 +46,7 @@
     "react-native-screens": "~4.10.0",
     "react-native-svg": "^15.2.0",
     "react-native-svg-circular-progress": "^1.0.4",
+    "react-native-toast-message": "^2.3.0",
     "react-native-ui-datepicker": "^3.1.2",
     "react-native-vector-icons": "^10.2.0",
     "react-native-web": "^0.20.0",

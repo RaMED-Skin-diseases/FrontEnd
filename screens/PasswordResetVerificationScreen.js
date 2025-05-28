@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform 
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 export default function PasswordResetVerificationScreen({ route, navigation }) {
   const { email } = route.params;
@@ -47,7 +48,12 @@ export default function PasswordResetVerificationScreen({ route, navigation }) {
   const handleVerifyCode = async () => {
     const verificationCode = code.join('');
     if (verificationCode.length !== 6) {
-      Alert.alert('Error', 'Please enter the full 6-digit code.');
+      //Alert.alert('Error', 'Please enter the full 6-digit code.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please enter the full 6-digit code.'
+      });
       return;
     }
 
@@ -61,14 +67,29 @@ export default function PasswordResetVerificationScreen({ route, navigation }) {
       const result = await response.json();
 
       if (response.ok) {
-        Alert.alert('Success', result.message || 'Code verified successfully!');
+        //Alert.alert('Success', result.message || 'Code verified successfully!');
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: result.message || 'Code verified successfully!'
+        });
         navigation.navigate('ResetPassword', { email, verificationCode }); 
       } else {
-        Alert.alert('Error', result.message || 'Invalid verification code. Please try again.');
+        //Alert.alert('Error', result.message || 'Invalid verification code. Please try again.');
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: result.message || 'Invalid verification code. Please try again.'
+        });
       }
     } catch (error) {
       console.error('Error:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      //Alert.alert('Error', 'Something went wrong. Please try again.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Something went wrong. Please try again.'
+      });
     }
   };
 
@@ -84,10 +105,20 @@ export default function PasswordResetVerificationScreen({ route, navigation }) {
       });
 
       const result = await response.json();
-      Alert.alert(response.ok ? 'Success' : 'Error', result.message || 'Could not resend the code.');
+      //Alert.alert(response.ok ? 'Success' : 'Error', result.message || 'Could not resend the code.');
+      Toast.show({
+        type: response.ok ? 'success' : 'error',
+        text1: response.ok ? 'Success' : 'Error',
+        text2: result.message || 'Could not resend the code.'
+      });
     } catch (error) {
       console.error('Error:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      //Alert.alert('Error', 'Something went wrong. Please try again.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Something went wrong. Please try again.'
+      });
       setResendDisabled(false);
     }
   };

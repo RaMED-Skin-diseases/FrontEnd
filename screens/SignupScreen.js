@@ -12,6 +12,7 @@ import {
   Modal,
   Platform,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 
 import DateTimePicker, { useDefaultStyles } from 'react-native-ui-datepicker';
@@ -52,7 +53,12 @@ export default function SignupScreenPart1({ navigation, route }) {
   const handleNext = () => {
     const { firstName, lastName, gender, dateOfBirth } = form;
     if (!firstName || !lastName || !gender || !dateOfBirth) {
-      Alert.alert('Error', 'Please fill in all fields');
+      //Alert.alert('Error', 'Please fill in all fields');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please fill in all fields',
+      });
     } else {
       navigation.navigate('SignupPart2', { form });
     }

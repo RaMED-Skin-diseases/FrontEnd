@@ -1,16 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons'; 
+import { AuthContext } from '../AuthContext'; 
+import Toast from 'react-native-toast-message'; 
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false); 
+  const { login } = useContext(AuthContext); // Use AuthContext
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password');
+      Toast.show({
+        type: 'error',
+        text1: 'Missing Fields',
+        text2: 'Please enter both email and password',
+      });
       return;
     }
 
@@ -27,7 +33,12 @@ export default function LoginScreen({ navigation }) {
       if (!contentType || !contentType.includes("application/json")) {
         const textResponse = await response.text();
         console.error("Non-JSON response:", textResponse);
-        Alert.alert("Login Failed", "Invalid response from server");
+        //Alert.alert("Login Failed", "Invalid response from server");
+        Toast.show({
+          type: 'error',
+          text1: 'Login Failed',
+          text2: 'Invalid response from server',
+        });
         return;
       }
 
@@ -40,25 +51,29 @@ export default function LoginScreen({ navigation }) {
       }
 
       if (!response.ok) {
-        Alert.alert("Login Failed", result.error || "Invalid email or password");
+        //Alert.alert("Login Failed", result.error || "Invalid email or password");
+        Toast.show({
+          type: 'error',
+          text1: 'Login Failed',
+          text2: result.error || 'Invalid email or password',
+        });
         return;
       }
 
       const { access, refresh, user } = result;
 
-
-      await AsyncStorage.setItem("accessToken", access);
-      await AsyncStorage.setItem("refreshToken", refresh);
-      await AsyncStorage.setItem("userData", JSON.stringify(user));
+      // Use the login function from AuthContext 
+      await login(access, refresh, user);
 
 
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "HomeTabs", params: { user } }],
-      });
     } catch (error) {
       console.error("Request failed:", error);
-      Alert.alert("Error", error.message);
+      //Alert.alert("Error", error.message);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.message || 'An unknown error occurred',
+      });
     }
   };
 
@@ -101,7 +116,7 @@ export default function LoginScreen({ navigation }) {
 
 
         <TouchableOpacity onPress={() => navigation.navigate('Landing')}>
-          <Text style={styles.signupText}>Don’t have an account?<Text style={styles.signup}> Sign up </Text></Text>
+          <Text style={styles.signupText}>Don't have an account?<Text style={styles.signup}> Sign up </Text></Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>

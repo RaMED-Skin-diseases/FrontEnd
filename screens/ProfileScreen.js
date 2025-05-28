@@ -14,7 +14,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
 import { AntDesign } from '@expo/vector-icons';
-
+import Toast from 'react-native-toast-message';
 
 const SPECIAL_MESSAGE = "The model could not confidently identify the disease. Your skin may be healthy or an unrecognized condition.";
 
@@ -96,18 +96,38 @@ const ProfileScreen = () => {
       setSelectedDiagnosisId(id);
       setShowConfirmModal(true);
     } else {
-      // For native platforms, use Alert
-      Alert.alert('Delete Diagnosis', 'Are you sure you want to delete this entry?', [
-        {
-          text: 'Cancel',
-          style: 'cancel',
+      // Alert.alert('Delete Diagnosis', 'Are you sure you want to delete this entry?', [
+      //   {
+      //     text: 'Cancel',
+      //     style: 'cancel',
+      //   },
+      //   {
+      //     text: 'Delete',
+      //     style: 'destructive',
+      //     onPress: () => performDelete(id),
+      //   },
+      // ]);
+      Toast.show({
+        type: 'info',
+        text1: 'Delete Diagnosis',
+        text2: 'Are you sure you want to delete this entry?',
+        position: 'top',
+        visibilityTime: 3000,
+        onPress: () => {
+          performDelete(id);
         },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => performDelete(id),
+        onHide: () => {
+          setSelectedDiagnosisId(null);
         },
-      ]);
+      });
+      Toast.show({
+        type: 'success',
+        text1: 'Deleted Successfully',
+        position: 'top',
+        visibilityTime: 2000,
+      });
+      setSelectedDiagnosisId(id);
+      setShowConfirmModal(true);
     }
   };
 

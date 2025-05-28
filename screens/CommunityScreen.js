@@ -13,6 +13,7 @@ import {
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
 
 export default function CommunityScreen({ navigation }) {
   const [posts, setPosts] = useState([]);
@@ -51,7 +52,12 @@ export default function CommunityScreen({ navigation }) {
     try {
       const accessToken = await AsyncStorage.getItem('accessToken');
       if (!accessToken) {
-        Alert.alert("Error", "Authentication token not found.");
+        //Alert.alert("Error", "Authentication token not found.");
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Authentication token not found.'
+        });
         setLoading(false);
         return;
       }
@@ -94,7 +100,12 @@ export default function CommunityScreen({ navigation }) {
       setPosts(formattedPosts);
     } catch (error) {
       console.error("Fetch error:", error);
-      Alert.alert("Error", error.message || "Failed to fetch posts.");
+      //Alert.alert("Error", error.message || "Failed to fetch posts.");
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.message || 'Failed to fetch posts.'
+      });
     } finally {
       setLoading(false);
     }
@@ -119,7 +130,12 @@ export default function CommunityScreen({ navigation }) {
     try {
       const accessToken = await AsyncStorage.getItem('accessToken');
       if (!accessToken) {
-        Alert.alert("Error", "Authentication token not found.");
+        //Alert.alert("Error", "Authentication token not found.");
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Authentication token not found.'
+        });
         return;
       }
 
@@ -146,11 +162,21 @@ export default function CommunityScreen({ navigation }) {
           )
         );
       } else {
-        Alert.alert("Error", "Failed to fetch comments.");
+        //Alert.alert("Error", "Failed to fetch comments.");
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to fetch comments.'
+        });
       }
     } catch (error) {
       console.error("Fetch comments error:", error);
-      Alert.alert("Error", error.message || "Failed to fetch comments.");
+      //Alert.alert("Error", error.message || "Failed to fetch comments.");
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.message || 'Failed to fetch comments.'
+      });
     }
   };
 
@@ -159,7 +185,12 @@ export default function CommunityScreen({ navigation }) {
       try {
         const accessToken = await AsyncStorage.getItem('accessToken');
         if (!accessToken) {
-          Alert.alert("Error", "Authentication token not found.");
+          //Alert.alert("Error", "Authentication token not found.");
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'Authentication token not found.'
+          });
           return;
         }
 
@@ -185,14 +216,29 @@ export default function CommunityScreen({ navigation }) {
           await fetchDoctorComments(postId);
           setReplies({ ...replies, [postId]: '' });
         } else {
-          Alert.alert("Error", "Failed to post reply.");
+          //Alert.alert("Error", "Failed to post reply.");
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'Failed to post reply.'
+          });
         }
       } catch (error) {
         console.error("Submit reply error:", error);
-        Alert.alert("Error", error.message || "Failed to submit reply.");
+        //Alert.alert("Error", error.message || "Failed to submit reply.");
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: error.message || 'Failed to submit reply.'
+        });
       }
     } else {
-      Alert.alert("Error", "Reply cannot be empty.");
+      //Alert.alert("Error", "Reply cannot be empty.");
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Reply cannot be empty.'
+      });
     }
   };
 
@@ -200,7 +246,12 @@ export default function CommunityScreen({ navigation }) {
     try {
       const accessToken = await AsyncStorage.getItem('accessToken');
       if (!accessToken) {
-        Alert.alert("Error", "Authentication token not found.");
+        //Alert.alert("Error", "Authentication token not found.");
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Authentication token not found.'
+        });
         return;
       }
 
@@ -225,11 +276,21 @@ export default function CommunityScreen({ navigation }) {
           )
         );
       } else {
-        Alert.alert("Error", "Failed to save post.");
+        //Alert.alert("Error", "Failed to save post.");
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to save post.'
+        });
       }
     } catch (error) {
       console.error("Save post error:", error);
-      Alert.alert("Error", error.message || "Failed to save post.");
+      //Alert.alert("Error", error.message || "Failed to save post.");
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.message || 'Failed to save post.'
+      });
     }
   };
 
@@ -437,38 +498,42 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
-    padding: 20,
+    paddingHorizontal: 15, // Use horizontal padding
+    paddingTop: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26, // Slightly larger title
     fontWeight: 'bold',
-    color: '#3E4A59',
-    marginBottom: 10,
+    color: '#343A40',
+    marginBottom: 15,
+    paddingHorizontal: 5, // Align with container padding
   },
   sortContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: '#F1F3F5',
+    justifyContent: 'space-between', // Space out buttons
+    backgroundColor: '#E9ECEF',
     borderRadius: 8,
     padding: 5,
-    marginBottom: 10,
+    marginBottom: 15,
   },
   sortButton: {
-    flex: 1,
+    flex: 1, // Distribute space evenly
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 10,
-    borderRadius: 5,
-    marginHorizontal: 2,
+    paddingVertical: 8,
+    paddingHorizontal: 5,
+    borderRadius: 6,
+    marginHorizontal: 3,
   },
   sortButtonActive: {
     backgroundColor: '#A0C4FF',
   },
   sortButtonText: {
-    marginLeft: 5,
-    color: '#3E4A59',
-    fontSize: 14,
+    marginLeft: 6,
+    color: '#495057',
+    fontSize: 13, // Slightly smaller text
+    fontWeight: '500',
   },
   sortButtonTextActive: {
     color: '#FFF',
@@ -478,30 +543,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 10,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    paddingHorizontal: 12,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#DEE2E6',
   },
   searchIcon: {
-    marginRight: 10,
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    height: 40,
+    height: 45, // Slightly taller input
     fontSize: 16,
-    color: '#3E4A59',
+    color: '#495057',
   },
   clearIcon: {
-    padding: 10,
+    padding: 8, // Easier to tap
+    marginLeft: 5,
   },
   searchButton: {
     backgroundColor: '#A0C4FF',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 6,
+    marginLeft: 8,
   },
   searchButtonText: {
     color: '#FFFFFF',
@@ -509,122 +574,171 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   noPostsText: {
+    flex: 1, // Take remaining space
     textAlign: 'center',
-    marginTop: 20,
-    fontSize: 16,
+    textAlignVertical: 'center', // Center vertically
+    fontSize: 17,
     color: '#6C757D',
+    marginTop: 50,
   },
   postContainer: {
     backgroundColor: '#FFFFFF',
     padding: 15,
-    borderRadius: 12,
+    borderRadius: 10,
     marginBottom: 15,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
     borderWidth: 1,
-    borderColor: '#E1E1E1',
+    borderColor: '#E9ECEF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   postHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 5,
+    marginBottom: 10,
   },
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 1, // Allow shrinking if author name is long
   },
   userIcon: {
     marginRight: 8,
   },
   userName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#3E4A59',
+    fontWeight: '600',
+    color: '#343A40',
+    fontSize: 15,
+    marginRight: 5, // Space before date
   },
   postDate: {
     fontSize: 12,
     color: '#6C757D',
+    textAlign: 'right',
+    marginLeft: 'auto', // Push date to the right before bookmark
+    marginRight: 10,
   },
   postTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#3E4A59',
-    marginTop: 5,
+    color: '#212529',
+    marginBottom: 5,
   },
   postText: {
-    fontSize: 16,
-    color: '#3E4A59',
+    fontSize: 15,
+    color: '#495057',
+    lineHeight: 22, // Improve readability
+    marginBottom: 10,
+  },
+  postImage: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    borderRadius: 8,
     marginTop: 5,
+    marginBottom: 10,
+    backgroundColor: '#E9ECEF', // Placeholder color
   },
   replyContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
     marginTop: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#CCC',
-    paddingHorizontal: 10,
-    backgroundColor: '#F1F3F5',
+    borderTopWidth: 1,
+    borderTopColor: '#E9ECEF',
+    paddingTop: 10,
   },
   replyInput: {
     flex: 1,
-    height: 40,
+    borderWidth: 1,
+    borderColor: '#CED4DA',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    marginRight: 10,
+    fontSize: 14,
+    backgroundColor: '#F8F9FA',
+    maxHeight: 100, // Limit height for multiline
   },
   sendButton: {
-    padding: 10,
-  },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
     backgroundColor: '#A0C4FF',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    borderRadius: 20, // Make it circular
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
+    elevation: 2,
   },
   commentsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#E9ECEF',
+    marginTop: 15,
   },
   commentsTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#3E4A59',
+    color: '#495057',
+  },
+  commentsSection: {
+    marginTop: 5,
   },
   doctorCommentContainer: {
-    backgroundColor: '#F0F0F0',
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 5,
+    backgroundColor: '#F1F3F5', // Slightly different background for comments
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
   },
   doctorCommentHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    marginBottom: 4,
   },
   doctorCommentAuthor: {
     fontWeight: 'bold',
+    color: '#007BFF', // Highlight doctor's name
     fontSize: 14,
-    color: '#000',
   },
   doctorCommentDate: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: 11,
+    color: '#6C757D',
   },
   doctorCommentText: {
     fontSize: 14,
-    color: '#333',
-    marginTop: 3,
+    color: '#343A40',
+    lineHeight: 20,
+  },
+  noCommentsText: {
+    textAlign: 'center',
+    marginTop: 10,
+    fontSize: 14,
+    color: '#6C757D',
+    fontStyle: 'italic',
+  },
+  nonDoctorNote: {
+    fontStyle: 'italic',
+    color: '#6C757D',
+    fontSize: 12,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    backgroundColor: '#A0C4FF',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
 });

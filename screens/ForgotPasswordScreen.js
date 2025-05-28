@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, Image, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
-
+import Toast from 'react-native-toast-message';
 export default function ForgotPasswordScreen({ navigation }) {
   const [email, setEmail] = useState('');
 
   const handleForgotPassword = async () => {
     if (!email) {
-      Alert.alert('Error', 'Please enter your username or email');
+      //Alert.alert('Error', 'Please enter your username or email');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please enter your username or email'
+      });
       return;
     }
 
@@ -22,14 +27,29 @@ export default function ForgotPasswordScreen({ navigation }) {
       const result = await response.json();
 
       if (response.ok) {
-        Alert.alert('Success', result.message || 'Password reset email sent!');
+        //Alert.alert('Success', result.message || 'Password reset email sent!');
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: result.message || 'Password reset email sent!'
+        });
         navigation.navigate('PasswordResetVerification', { email }); 
       } else {
-        Alert.alert('Error', result.message || 'Failed to send password reset email');
+        //Alert.alert('Error', result.message || 'Failed to send password reset email');
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: result.message || 'Failed to send password reset email'
+        });
       }
     } catch (error) {
       console.error('Error:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      //Alert.alert('Error', 'Something went wrong. Please try again.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Something went wrong. Please try again.'
+      });
     }
   };
 

@@ -13,7 +13,7 @@ import {
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-
+import Toast from 'react-native-toast-message';
 
 export default function MyPostsScreen({ navigation }) {
   const [posts, setPosts] = useState([]);
@@ -32,12 +32,22 @@ export default function MyPostsScreen({ navigation }) {
         setUserName(userDataParsed?.username || null); // Store username
       } else {
 
-        Alert.alert("Error", "User data not found. Please log in again.");
+        //Alert.alert("Error", "User data not found. Please log in again.");
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'User data not found. Please log in again.'
+        });
         navigation.goBack(); 
       }
     } catch (error) {
       console.error("Failed to fetch user data", error);
-      Alert.alert("Error", "Failed to load user data.");
+      //Alert.alert("Error", "Failed to load user data.");
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to load user data.'
+      });
     }
   };
 
@@ -60,7 +70,12 @@ export default function MyPostsScreen({ navigation }) {
     try {
       const accessToken = await AsyncStorage.getItem('accessToken');
       if (!accessToken) {
-        Alert.alert("Error", "Authentication token not found.");
+        //Alert.alert("Error", "Authentication token not found.");
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Authentication token not found.'
+        });
         setLoading(false);
         return;
       }
@@ -102,7 +117,12 @@ export default function MyPostsScreen({ navigation }) {
       setPosts(formattedPosts);
     } catch (error) {
       console.error("Fetch error:", error);
-      Alert.alert("Error", error.message || "Failed to fetch posts.");
+      //Alert.alert("Error", error.message || "Failed to fetch posts.");
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.message || "Failed to fetch posts."
+      });
     } finally {
       setLoading(false);
     }
@@ -128,7 +148,12 @@ export default function MyPostsScreen({ navigation }) {
     try {
       const accessToken = await AsyncStorage.getItem('accessToken');
       if (!accessToken) {
-        Alert.alert("Error", "Authentication token not found.");
+        //Alert.alert("Error", "Authentication token not found.");
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Authentication token not found.'
+        });
         return;
       }
 
@@ -155,11 +180,21 @@ export default function MyPostsScreen({ navigation }) {
           )
         );
       } else {
-        Alert.alert("Error", "Failed to fetch comments.");
+        //Alert.alert("Error", "Failed to fetch comments.");
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to fetch comments.'
+        });
       }
     } catch (error) {
       console.error("Fetch comments error:", error);
-      Alert.alert("Error", error.message || "Failed to fetch comments.");
+      //Alert.alert("Error", error.message || "Failed to fetch comments.");
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.message || "Failed to fetch comments."
+      });
     }
   };
 
@@ -168,7 +203,13 @@ export default function MyPostsScreen({ navigation }) {
       try {
         const accessToken = await AsyncStorage.getItem('accessToken');
         if (!accessToken) {
-          Alert.alert("Error", "Authentication token not found.");
+          //Alert.alert("Error", "Authentication token not found.");
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'Authentication token not found.'
+          });
+
           return;
         }
 
@@ -194,14 +235,29 @@ export default function MyPostsScreen({ navigation }) {
           await fetchDoctorComments(postId);
           setReplies({ ...replies, [postId]: '' });
         } else {
-          Alert.alert("Error", "Failed to post reply.");
+          //Alert.alert("Error", "Failed to post reply.");
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'Failed to post reply.'
+          });
         }
       } catch (error) {
         console.error("Submit reply error:", error);
-        Alert.alert("Error", error.message || "Failed to submit reply.");
+        //Alert.alert("Error", error.message || "Failed to submit reply.");
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: error.message || "Failed to submit reply."
+        });
       }
     } else {
-      Alert.alert("Error", "Reply cannot be empty.");
+      //Alert.alert("Error", "Reply cannot be empty.");
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Reply cannot be empty.'
+      });
     }
   };
 
@@ -209,7 +265,12 @@ export default function MyPostsScreen({ navigation }) {
     try {
       const accessToken = await AsyncStorage.getItem('accessToken');
       if (!accessToken) {
-        Alert.alert("Error", "Authentication token not found.");
+        //Alert.alert("Error", "Authentication token not found.");
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Authentication token not found.'
+        });
         return;
       }
 
@@ -234,11 +295,21 @@ export default function MyPostsScreen({ navigation }) {
           )
         );
       } else {
-        Alert.alert("Error", "Failed to save post.");
+        //Alert.alert("Error", "Failed to save post.");
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to save post.'
+        });
       }
     } catch (error) {
       console.error("Save post error:", error);
-      Alert.alert("Error", error.message || "Failed to save post.");
+      //Alert.alert("Error", error.message || "Failed to save post.");
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.message || "Failed to save post."
+      });
     }
   };
 

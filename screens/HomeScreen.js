@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { 
   View, 
   Text, 
@@ -13,6 +13,8 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { AuthContext } from '../AuthContext'; // Import AuthContext
+import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
 
@@ -25,6 +27,7 @@ export default function HomeScreen() {
     chat: new Animated.Value(1),
     community: new Animated.Value(1),
   });
+  const { logout } = useContext(AuthContext); // Use AuthContext for logout
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -49,35 +52,44 @@ export default function HomeScreen() {
   }, []);
 
   const handleLogout = async () => {
-    const accessToken = await AsyncStorage.getItem('accessToken');
-    const refreshToken = await AsyncStorage.getItem('refreshToken');
-    const bodyToSend = {
-      access: accessToken,
-      refresh: refreshToken,
-    };
     try {
-      const response = await fetch('https://skinwise.tech/account/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          "Authorization": `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(bodyToSend),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        await AsyncStorage.removeItem('accessToken');
-        await AsyncStorage.removeItem('refreshToken');
-        await AsyncStorage.removeItem('userData');
-        navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
-      } else {
-        console.error("Logout failed:", data);
-        Alert.alert('Error', data.message || 'Logout failed. Please try again.');
+      // Get tokens for API call
+      const accessToken = await AsyncStorage.getItem('accessToken');
+      const refreshToken = await AsyncStorage.getItem('refreshToken');
+      
+      if (accessToken && refreshToken) {
+        // Call the server logout endpoint
+        try {
+          await fetch('https://skinwise.tech/account/logout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              "Authorization": `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({
+              access: accessToken,
+              refresh: refreshToken,
+            }),
+          });
+          // We don't need to check the response - we'll log out locally regardless
+        } catch (error) {
+          console.error('Logout API call failed:', error);
+          // Continue with local logout even if API call fails
+        }
       }
+      
+
+      await logout();
+      
+
     } catch (error) {
-      console.error('Logout request failed:', error);
-      Alert.alert('Error', 'An error occurred. Please check your connection and try again.');
+      console.error('Logout error:', error);
+      //Alert.alert('Error', 'An error occurred during logout. Please try again.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'An error occurred during logout. Please try again.'
+      });
     }
   };
 

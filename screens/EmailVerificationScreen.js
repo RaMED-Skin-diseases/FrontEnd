@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform 
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
 
 //992866
 export default function EmailVerificationScreen({ route, navigation }) {
@@ -54,7 +54,12 @@ export default function EmailVerificationScreen({ route, navigation }) {
     console.log("Verification code:", verificationCode);
     if (!verificationCode || verificationCode.trim() === "") {
         console.log("Verification code is empty, returning early.");
-        Alert.alert("Error", "Please enter the verification code.");
+        //Alert.alert("Error", "Please enter the verification code.");
+        Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'Please enter the verification code.'
+        });
         return;
     }
 
@@ -92,17 +97,31 @@ export default function EmailVerificationScreen({ route, navigation }) {
 
         if (!response.ok || !jsonData || jsonData.message !== "Email verified successfully.") {
             console.log("Error response or verification failed:", jsonData);
-            Alert.alert("Error", "Verification failed. Please check the code and try again.");
+            //Alert.alert("Error", "Verification failed. Please check the code and try again.");
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'Verification failed. Please check the code and try again.'
+            });
         } else {
             console.log("Email verified successfully.");
-            Alert.alert("Success", "Your email has been verified!");
+            //Alert.alert("Success", "Your email has been verified!");
+            Toast.show({
+                type: 'success',
+                text1: 'Success',
+                text2: 'Your email has been verified!'
+            });
             navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-            // You can add navigation or logic here after successful verification
         }
 
     } catch (error) {
         console.error("Network error:", error);
-        Alert.alert("Error", "Network request failed. Please check your internet connection.");
+        //Alert.alert("Error", "Network request failed. Please check your internet connection.");
+        Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'Network request failed. Please check your internet connection.'
+        });
     }
 };
 
@@ -130,15 +149,30 @@ const resendCode = async () => {
       const data = JSON.parse(responseText);
       console.log("Resend response:", data);
 
-      Alert.alert('New Code Sent', 'A new verification code has been sent to your email.');
+      //Alert.alert('New Code Sent', 'A new verification code has been sent to your email.');
+      Toast.show({
+        type: 'success',
+        text1: 'New Code Sent',
+        text2: 'A new verification code has been sent to your email.'
+      });
       setResendDisabled(true); 
       setTimer(60); 
     } else {
-      Alert.alert('Error', 'Failed to resend verification code. Please try again.');
+      //Alert.alert('Error', 'Failed to resend verification code. Please try again.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to resend verification code. Please try again.'
+      });
     }
   } catch (error) {
     console.log("Network error:", error);
-    Alert.alert('Error', 'An error occurred. Please check your connection and try again.');
+    //Alert.alert('Error', 'An error occurred. Please check your connection and try again.');
+    Toast.show({
+      type: 'error',
+      text1: 'Error',
+      text2: 'An error occurred. Please check your connection and try again.'
+    });
   }
 };
 

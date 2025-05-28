@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
 
 export default function AIPrediction({ navigation }) {
   const { addPrediction } = useContext(UserContext);
@@ -37,7 +38,12 @@ export default function AIPrediction({ navigation }) {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'We need access to your photos to continue.');
+      //Alert.alert('Permission Denied', 'We need access to your photos to continue.');
+      Toast.show({
+        type: 'error',
+        text1: 'Permission Denied',
+        text2: 'We need access to your photos to continue.'
+      });
       return;
     }
 
@@ -62,7 +68,12 @@ export default function AIPrediction({ navigation }) {
     // Request camera permissions
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'We need access to your camera to continue.');
+      //Alert.alert('Permission Denied', 'We need access to your camera to continue.');
+      Toast.show({
+        type: 'error',
+        text1: 'Permission Denied',
+        text2: 'We need access to your camera to continue.'
+      });
       return;
     }
 
@@ -84,7 +95,12 @@ export default function AIPrediction({ navigation }) {
 
   const analyzeImage = async () => {
     if (!selectedImage) {
-      Alert.alert('No Image Selected', 'Please upload or take an image first.');
+      //Alert.alert('No Image Selected', 'Please upload or take an image first.');
+      Toast.show({
+        type: 'error',
+        text1: 'No Image Selected',
+        text2: 'Please upload or take an image first.'
+      });
       return;
     }
 
@@ -181,7 +197,12 @@ export default function AIPrediction({ navigation }) {
             formData.append('file', blob, 'upload.jpg');
           } catch (error) {
             console.error("Error creating blob from URI:", error);
-            Alert.alert('Error', 'Failed to process the image. Please try again.');
+            //Alert.alert('Error', 'Failed to process the image. Please try again.');
+            Toast.show({
+              type: 'error',
+              text1: 'Error',
+              text2: 'Failed to process the image. Please try again.'
+            });
             setIsLoading(false);
             return;
           }
@@ -232,7 +253,12 @@ export default function AIPrediction({ navigation }) {
   
     } catch (error) {
       console.error("Analysis error:", error);
-      Alert.alert('Error', error.message || 'Failed to analyze image.');
+      //Alert.alert('Error', error.message || 'Failed to analyze image.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.message || 'Failed to analyze image.'
+      });
     } finally {
       setIsLoading(false);
     }

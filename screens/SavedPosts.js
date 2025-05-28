@@ -13,6 +13,7 @@ import {
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
 
 export default function SavedPostsScreen({ navigation }) {
   const [posts, setPosts] = useState([]);
@@ -31,11 +32,21 @@ export default function SavedPostsScreen({ navigation }) {
         setUserType(userDataParsed?.user_type || 'null');
       } else {
         Alert.alert("Error", "User data not found. Please log in again.");
+        Toast.show({
+          type: 'error',
+          text1: 'User data not found',
+          text2: 'Please log in again to continue.',
+        });
         navigation.goBack();
       }
     } catch (error) {
       console.error("Failed to fetch user type", error);
-      Alert.alert("Error", "Failed to load user data.");
+      //Alert.alert("Error", "Failed to load user data.");
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to load user data',
+        text2: 'Please try again later.',
+      });
     }
   };
 
@@ -56,7 +67,12 @@ export default function SavedPostsScreen({ navigation }) {
     try {
       const accessToken = await AsyncStorage.getItem('accessToken');
       if (!accessToken) {
-        Alert.alert("Error", "Authentication token not found.");
+        //Alert.alert("Error", "Authentication token not found.");
+        Toast.show({
+          type: 'error',
+          text1: 'Authentication Error',
+          text2: 'Please log in again to access saved posts.',
+        });
         setLoading(false);
         return;
       }
@@ -96,7 +112,12 @@ export default function SavedPostsScreen({ navigation }) {
       setPosts(formattedPosts);
     } catch (error) {
       console.error("Fetch error:", error);
-      Alert.alert("Error", error.message || "Failed to fetch posts.");
+      //Alert.alert("Error", error.message || "Failed to fetch posts.");
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to fetch posts',
+        text2: error.message || 'Please try again later.',
+      });
     } finally {
       setLoading(false);
     }
@@ -119,7 +140,12 @@ export default function SavedPostsScreen({ navigation }) {
     try {
       const accessToken = await AsyncStorage.getItem('accessToken');
       if (!accessToken) {
-        Alert.alert("Error", "Authentication token not found.");
+        //Alert.alert("Error", "Authentication token not found.");
+        Toast.show({
+          type: 'error',
+          text1: 'Authentication Error',
+          text2: 'Please log in again to access comments.',
+        });
         return;
       }
 
@@ -146,11 +172,21 @@ export default function SavedPostsScreen({ navigation }) {
           )
         );
       } else {
-        Alert.alert("Error", "Failed to fetch comments.");
+        //Alert.alert("Error", "Failed to fetch comments.");
+        Toast.show({
+          type: 'error',
+          text1: 'Failed to fetch comments',
+          text2: data.message || 'Please try again later.',
+        });
       }
     } catch (error) {
       console.error("Fetch comments error:", error);
-      Alert.alert("Error", error.message || "Failed to fetch comments.");
+      //Alert.alert("Error", error.message || "Failed to fetch comments.");
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to fetch comments',
+        text2: error.message || 'Please try again later.',
+      });
     }
   };
 
@@ -160,7 +196,12 @@ export default function SavedPostsScreen({ navigation }) {
       try {
         const accessToken = await AsyncStorage.getItem('accessToken');
         if (!accessToken) {
-          Alert.alert("Error", "Authentication token not found.");
+          //Alert.alert("Error", "Authentication token not found.");
+          Toast.show({
+            type: 'error',
+            text1: 'Authentication Error',
+            text2: 'Please log in again to submit a reply.',
+          });
           return;
         }
 
@@ -186,14 +227,29 @@ export default function SavedPostsScreen({ navigation }) {
           await fetchDoctorComments(postId);
           setReplies({ ...replies, [postId]: '' });
         } else {
-          Alert.alert("Error", "Failed to post reply.");
+          //Alert.alert("Error", "Failed to post reply.");
+          Toast.show({
+            type: 'error',
+            text1: 'Failed to post reply',
+            text2: data.message || 'Please try again later.',
+          });
         }
       } catch (error) {
         console.error("Submit reply error:", error);
-        Alert.alert("Error", error.message || "Failed to submit reply.");
+        //Alert.alert("Error", error.message || "Failed to submit reply.");
+        Toast.show({
+          type: 'error',
+          text1: 'Failed to submit reply',
+          text2: error.message || 'Please try again later.',
+        });
       }
     } else {
-      Alert.alert("Error", "Reply cannot be empty.");
+      //Alert.alert("Error", "Reply cannot be empty.");
+      Toast.show({
+        type: 'error',
+        text1: 'Empty Reply',
+        text2: 'Please enter a reply before submitting.',
+      });
     }
   };
 
@@ -201,7 +257,12 @@ export default function SavedPostsScreen({ navigation }) {
     try {
       const accessToken = await AsyncStorage.getItem("accessToken");
       if (!accessToken) {
-        Alert.alert("Error", "Authentication token not found.");
+        //Alert.alert("Error", "Authentication token not found.");
+        Toast.show({
+          type: 'error',
+          text1: 'Authentication Error',
+          text2: 'Please log in again to save posts.',
+        });
         return;
       }
   
@@ -237,11 +298,21 @@ export default function SavedPostsScreen({ navigation }) {
           );
         }
       } else {
-        Alert.alert("Error", "Failed to update save status.");
+        //Alert.alert("Error", "Failed to update save status.");
+        Toast.show({
+          type: 'error',
+          text1: 'Failed to update save status',
+          text2: data.message || 'Please try again later.',
+        });
       }
     } catch (error) {
       console.error("Save post error:", error);
-      Alert.alert("Error", error.message || "Failed to update save status.");
+      //Alert.alert("Error", error.message || "Failed to update save status.");
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to update save status',
+        text2: error.message || 'Please try again later.',
+      });
     }
   };
   

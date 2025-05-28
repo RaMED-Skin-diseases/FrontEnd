@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 export default function PasswordResetScreen({ route, navigation }) {
   const { email } = route.params;
@@ -19,12 +20,23 @@ export default function PasswordResetScreen({ route, navigation }) {
 
   const handleResetPassword = async () => {
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long.');
+      //Alert.alert('Error', 'Password must be at least 6 characters long.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Password must be at least 6 characters long.'
+      });
+
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match.');
+      //Alert.alert('Error', 'Passwords do not match.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Passwords do not match.'
+      });
       return;
     }
 
@@ -40,18 +52,33 @@ export default function PasswordResetScreen({ route, navigation }) {
       setLoading(false);
       
       if (response.ok) {
-        Alert.alert('Success', result.message || 'Password reset successfully!');
+        //Alert.alert('Success', result.message || 'Password reset successfully!');
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: result.message || 'Password reset successfully!'
+        });
         navigation.reset({
             index: 0,
             routes: [{ name: 'Login' }],
           });
       } else {
-        Alert.alert('Error', result.message || 'Failed to reset password.');
+        //Alert.alert('Error', result.message || 'Failed to reset password.');
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: result.message || 'Failed to reset password.'
+        });
       }
     } catch (error) {
       setLoading(false);
       console.error('Error:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      //Alert.alert('Error', 'Something went wrong. Please try again.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Something went wrong. Please try again.'
+      });
     }
   };
 

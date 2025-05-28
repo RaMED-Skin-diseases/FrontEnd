@@ -16,7 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import Toast from 'react-native-toast-message';
 export default function CreatePostScreen({ navigation }) {
   const [postText, setPostText] = useState('');
   const [titleText, setTitleText] = useState('');
@@ -43,7 +43,12 @@ export default function CreatePostScreen({ navigation }) {
   const takePhoto = async () => {
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
     if (permissionResult.granted === false) {
-      Alert.alert("Permission Denied", "Camera access is required to take photos.");
+      //Alert.alert("Permission Denied", "Camera access is required to take photos.");
+      Toast.show({
+        type: 'error',
+        text1: 'Permission Denied',
+        text2: 'Camera access is required to take photos.'
+      });
       return;
     }
   
@@ -68,7 +73,12 @@ export default function CreatePostScreen({ navigation }) {
   // Function to handle post creation
   const handlePost = async () => {
     if (!postText.trim()) {
-      Alert.alert("Error", "Post content cannot be empty!");
+      //Alert.alert("Error", "Post content cannot be empty!");
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Post content cannot be empty!'
+      });
       return;
     }
   
@@ -168,17 +178,32 @@ export default function CreatePostScreen({ navigation }) {
           // Try to parse JSON response
           const errorData = await response.json();
           console.log('Error response:', errorData);
-          Alert.alert("Error", errorData.message || "Failed to create post. Try again!");
+          //Alert.alert("Error", errorData.message || "Failed to create post. Try again!");
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: errorData.message || 'Failed to create post. Try again!'
+          });
         } catch (e) {
           // If not JSON, get text
           const errorText = await response.text();
           console.log('Error response text:', errorText);
-          Alert.alert("Error", "Failed to create post. Try again!");
+          //Alert.alert("Error", "Failed to create post. Try again!");
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'Failed to create post. Try again!'
+          });
         }
       }
     } catch (error) {
       console.error("Post creation error:", error);
-      Alert.alert("Error", "Something went wrong!");
+      //Alert.alert("Error", "Something went wrong!");
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Something went wrong!'
+      });
     } finally {
       setLoading(false);
     }
