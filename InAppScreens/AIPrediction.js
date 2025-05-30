@@ -29,7 +29,7 @@ export default function AIPrediction({ navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
 
   const [usesSunscreen, setUsesSunscreen] = useState(null);
-  const [sunlightDuration, setSunlightDuration] = useState('');
+  const [sunlightDuration, setSunlightDuration] = useState(0); // Changed to 0
   const [skinCancerHistory, setSkinCancerHistory] = useState(null);
   const [areaGrowingShape, setAreaGrowingShape] = useState(null);
   const [experienceItching, setExperienceItching] = useState(null);
@@ -38,11 +38,10 @@ export default function AIPrediction({ navigation }) {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      //Alert.alert('Permission Denied', 'We need access to your photos to continue.');
       Toast.show({
         type: 'error',
         text1: 'Permission Denied',
-        text2: 'We need access to your photos to continue.'
+        text2: 'We need access to your photos to continue.',
       });
       return;
     }
@@ -52,7 +51,6 @@ export default function AIPrediction({ navigation }) {
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.1,
-      // Add base64 option for web compatibility
       base64: Platform.OS === 'web',
     });
 
@@ -63,26 +61,22 @@ export default function AIPrediction({ navigation }) {
     }
   };
 
-  // New function to take a photo with camera
+  // Function to take a photo with camera
   const takePhoto = async () => {
-    // Request camera permissions
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      //Alert.alert('Permission Denied', 'We need access to your camera to continue.');
       Toast.show({
         type: 'error',
         text1: 'Permission Denied',
-        text2: 'We need access to your camera to continue.'
+        text2: 'We need access to your camera to continue.',
       });
       return;
     }
 
-    // Launch camera
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.1,
-      // Add base64 option for web compatibility
       base64: Platform.OS === 'web',
     });
 
@@ -95,175 +89,105 @@ export default function AIPrediction({ navigation }) {
 
   const analyzeImage = async () => {
     if (!selectedImage) {
-      //Alert.alert('No Image Selected', 'Please upload or take an image first.');
       Toast.show({
         type: 'error',
         text1: 'No Image Selected',
-        text2: 'Please upload or take an image first.'
+        text2: 'Please upload or take an image first.',
       });
       return;
     }
-
-    setModalVisible(true); // Open modal before the analysis
+    setModalVisible(true); // Open modal before analysis
   };
 
   const goToChatBotWithSummary = () => {
     const summary = `As a dermatology assistant, I've analyzed an image and detected ${prediction} with ${probability} confidence.
-  Based on this analysis, provide helpful, factual medical information about ${prediction}.
-  IMPORTANT: Always advise the patient to consult with a healthcare professional for proper diagnosis and treatment.
-  
-  Additional Questionnaire Responses:
-  - Daily Sunlight Exposure: ${sunlightDuration} hours
-  - Uses Sunscreen: ${usesSunscreen ? 'Yes' : 'No'}
-  - Experiences Bleeding/Itching: ${experienceItching ? 'Yes' : 'No'}
-  - Area Growing or Changing Shape: ${areaGrowingShape ? 'Yes' : 'No'}
-  - Family History of Skin Cancer: ${skinCancerHistory ? 'Yes' : 'No'}`;
-  
-    console.log(summary);
-  
+    Based on this analysis, provide helpful, factual medical information about ${prediction}.
+    IMPORTANT: Always advise the patient to consult with a healthcare professional for proper diagnosis and treatment.
+    
+    Additional Questionnaire Responses:
+    - Daily Sunlight Exposure: ${sunlightDuration} hours
+    - Uses Sunscreen: ${usesSunscreen ? 'Yes' : 'No'}
+    - Experiences Bleeding/Itching: ${experienceItching ? 'Yes' : 'No'}
+    - Area Growing or Changing Shape: ${areaGrowingShape ? 'Yes' : 'No'}
+    - Family History of Skin Cancer: ${skinCancerHistory ? 'Yes' : 'No'}`;
+
     navigation.navigate('AIChat', { initialMessage: summary });
   };
 
-
-  function combineResults(class1, conf1, class2, conf2) {
-    // Known conflict cases
-    const conflictPairs = {
-        'Eczema|Psoriasis': 'Psoriasis',
-        'Benign Keratosis|actinic keratosis': 'actinic keratosis',
-        'Melanocytic Nevi|Melanoma': 'Melanoma',
-        'Atopic Dermatitis|Eczema': 'Eczema'
-    };
-
-    const key1 = `${class1}|${class2}`;
-    const key2 = `${class2}|${class1}`;
-    
-    console.log('confidence',Math.max(parseFloat(conf1), parseFloat(conf2)))
-    if (conflictPairs.hasOwnProperty(key1)) {
-        return {
-            final_class: conflictPairs[key1],
-            confidence: Math.max(parseFloat(conf1), parseFloat(conf2))
-        };
-    } else if (conflictPairs.hasOwnProperty(key2)) {
-        return {
-            final_class: conflictPairs[key2],
-            confidence: Math.max(parseFloat(conf1), parseFloat(conf2))
-        };
-    }
-
-    if (conf1 > conf2 + 0.15) {
-        return {
-            final_class: class1,
-            confidence: conf1
-        };
-    } else {
-        return {
-            final_class: class2,
-            confidence: conf2
-        };
-    }
-}
-
   const handleModalSubmit = async () => {
-    setModalVisible(false); 
-    setIsLoading(true);
-  
+    // Validation: Ensure all Yes/No questions are answered
+    if (
+      usesSunscreen === null ||
+      skinCancerHistory === null ||
+      areaGrowingShape === null ||
+      experienceItching === null
+    ) {
+      Toast.show({
+        type: 'error',
+        text1: 'Incomplete Form',
+        text2: 'Please answer all questions before proceeding.',
+      });
+      return; // Keep modal open if validation fails
+    }
+
+    setModalVisible(false); // Close modal
+    setIsLoading(true); // Start loading
+
     try {
       const formData = new FormData();
-      
-      // Handle image data differently based on platform
       if (Platform.OS === 'web') {
-        // For web, handle base64 image
         if (selectedImage.base64) {
-          // Convert base64 to blob for web
           const base64Response = await fetch(`data:image/jpeg;base64,${selectedImage.base64}`);
           const blob = await base64Response.blob();
-          
-          // Create a file from the blob
-          const fileName = 'upload.jpg';
-          const image = new File([blob], fileName, { type: 'image/jpeg' });
-          
+          const image = new File([blob], 'upload.jpg', { type: 'image/jpeg' });
           formData.append('image', image);
         } else if (selectedImage.uri) {
-          // If base64 is not available but URI is, try to fetch the image and create a blob
-          try {
-            const response = await fetch(selectedImage.uri);
-            const blob = await response.blob();
-            formData.append('image', blob, 'upload.jpg');
-          } catch (error) {
-            console.error("Error creating blob from URI:", error);
-            //Alert.alert('Error', 'Failed to process the image. Please try again.');
-            Toast.show({
-              type: 'error',
-              text1: 'Error',
-              text2: 'Failed to process the image. Please try again.'
-            });
-            setIsLoading(false);
-            return;
-          }
+          const response = await fetch(selectedImage.uri);
+          const blob = await response.blob();
+          formData.append('image', blob, 'upload.jpg');
         }
       } else {
-        // For native platforms (iOS/Android)
         formData.append('image', {
           uri: selectedImage.uri,
           name: 'upload.jpg',
           type: 'image/jpeg',
         });
       }
-  
+
       const token = await AsyncStorage.getItem('accessToken');
-      console.log('formdata',formData)
-      
-      // Make the API request
       const response = await fetch('https://skinwise.tech/detect/upload-image/', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
-          ...(Platform.OS !== 'web' && { "Content-Type": "multipart/form-data" }),
+          ...(Platform.OS !== 'web' && { 'Content-Type': 'multipart/form-data' }),
         },
         body: formData,
       });
-  
-      console.log('Response:', response);
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-  
+
       const data = await response.json();
-      console.log('Data:', data);
-      setPrediction(data.diagnosis_result.class)
-      setProbability(data.diagnosis_result.probability);
-      // let combined_results = combineResults(
-      //   data.tensorflow_prediction.class,
-      //   data.tensorflow_prediction.probability,
-      //   data.torch_prediction.class,
-      //   data.torch_prediction.probability
-      // );
-      
-      // console.log('Combined Results:', combined_results);
-      // setPrediction(combined_results.final_class);
-      // console.log(combined_results.confidence);
-      // setProbability(combined_results.confidence);
-  
+      setPrediction(data.diagnosis_result.class || data.diagnosis_result.message);
+      setProbability(data.diagnosis_result.probability || 'N/A');
     } catch (error) {
-      console.error("Analysis error:", error);
-      //Alert.alert('Error', error.message || 'Failed to analyze image.');
       let message = 'Failed to analyze image.';
       if (error.message.includes('504')) {
-      message = 'The server took too long. try again later.';
+        message = 'The server took too long. Try again later.';
       } else if (error.message.includes('Network request failed')) {
-      message = 'Please check your internet connection.';
-     }
+        message = 'Please check your internet connection.';
+      }
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: message || 'Failed to analyze image.'
+        text2: message,
       });
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   const removeImage = () => {
     setSelectedImage(null);
     setPrediction(null);
@@ -282,11 +206,7 @@ export default function AIPrediction({ navigation }) {
           {selectedImage ? (
             <View style={styles.imageContainer}>
               <Image source={{ uri: selectedImage.uri }} style={styles.imagePreview} />
-              <TouchableOpacity
-                style={styles.removeIcon}
-                onPress={removeImage}
-                activeOpacity={0.7}
-              >
+              <TouchableOpacity style={styles.removeIcon} onPress={removeImage} activeOpacity={0.7}>
                 <Ionicons name="close-circle" size={30} color="#FF4D4D" />
               </TouchableOpacity>
             </View>
@@ -297,24 +217,14 @@ export default function AIPrediction({ navigation }) {
           )}
 
           <View style={styles.imageButtonsContainer}>
-            <TouchableOpacity
-              style={[styles.imageButton, { marginRight: 8 }]}
-              onPress={pickImage}
-              activeOpacity={0.8}
-            >
+            <TouchableOpacity style={[styles.imageButton, { marginRight: 8 }]} onPress={pickImage} activeOpacity={0.8}>
               <LinearGradient colors={['#007BFF', '#0056D2']} style={styles.gradientButton}>
                 <Ionicons name="images-outline" size={20} color="#FFFFFF" style={styles.buttonIcon} />
                 <Text style={styles.imageButtonText}>Gallery</Text>
               </LinearGradient>
             </TouchableOpacity>
-
-            {/* Only show camera button if not on web or if web has camera support */}
             {(Platform.OS !== 'web' || (Platform.OS === 'web' && navigator?.mediaDevices?.getUserMedia)) && (
-              <TouchableOpacity
-                style={[styles.imageButton, { marginLeft: 8 }]}
-                onPress={takePhoto}
-                activeOpacity={0.8}
-              >
+              <TouchableOpacity style={[styles.imageButton, { marginLeft: 8 }]} onPress={takePhoto} activeOpacity={0.8}>
                 <LinearGradient colors={['#28A745', '#218838']} style={styles.gradientButton}>
                   <Ionicons name="camera-outline" size={20} color="#FFFFFF" style={styles.buttonIcon} />
                   <Text style={styles.imageButtonText}>Camera</Text>
@@ -326,11 +236,7 @@ export default function AIPrediction({ navigation }) {
 
         {selectedImage && (
           <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={styles.analyzeButton}
-              onPress={analyzeImage}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity style={styles.analyzeButton} onPress={analyzeImage} activeOpacity={0.7}>
               <Text style={styles.analyzeButtonText}>Analyze</Text>
             </TouchableOpacity>
           </View>
@@ -350,14 +256,13 @@ export default function AIPrediction({ navigation }) {
               <Text style={styles.resultLabel}>Condition:</Text>
               <Text style={styles.resultValue}>{prediction}</Text>
             </View>
-            <View style={styles.resultRow}>
-              <Text style={styles.resultLabel}>Confidence:</Text>
-              <Text style={styles.resultValue}>{probability} %</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.chatButton}
-              onPress={goToChatBotWithSummary}
-            >
+            {typeof probability === 'number' && (
+              <View style={styles.resultRow}>
+                <Text style={styles.resultLabel}>Confidence:</Text>
+                <Text style={styles.resultValue}>{probability} %</Text>
+              </View>
+            )}
+            <TouchableOpacity style={styles.chatButton} onPress={goToChatBotWithSummary}>
               <Text style={styles.chatButtonText}>Continue to your dermatology assistant</Text>
             </TouchableOpacity>
           </View>
@@ -371,7 +276,7 @@ export default function AIPrediction({ navigation }) {
 
               <Text style={styles.modalLabel}>How long are you subjected to sunlight daily?</Text>
               <Slider
-                style={{ width:'100%', height: 40 }}
+                style={{ width: '100%', height: 40 }}
                 minimumValue={0}
                 maximumValue={15}
                 minimumTrackTintColor="#0000FF"
@@ -385,19 +290,13 @@ export default function AIPrediction({ navigation }) {
               <Text style={styles.modalLabel}>Do you use sunscreen regularly?</Text>
               <View style={styles.optionButtons}>
                 <TouchableOpacity
-                  style={[
-                    styles.optionButton,
-                    usesSunscreen === true && styles.optionSelected,
-                  ]}
+                  style={[styles.optionButton, usesSunscreen === true && styles.optionSelected]}
                   onPress={() => setUsesSunscreen(true)}
                 >
                   <Text style={styles.optionText}>Yes</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[
-                    styles.optionButton,
-                    usesSunscreen === false && styles.optionSelected,
-                  ]}
+                  style={[styles.optionButton, usesSunscreen === false && styles.optionSelected]}
                   onPress={() => setUsesSunscreen(false)}
                 >
                   <Text style={styles.optionText}>No</Text>
@@ -407,19 +306,13 @@ export default function AIPrediction({ navigation }) {
               <Text style={styles.modalLabel}>Do you experience bleeding or itching?</Text>
               <View style={styles.optionButtons}>
                 <TouchableOpacity
-                  style={[
-                    styles.optionButton,
-                    experienceItching === true && styles.optionSelected,
-                  ]}
+                  style={[styles.optionButton, experienceItching === true && styles.optionSelected]}
                   onPress={() => setExperienceItching(true)}
                 >
                   <Text style={styles.optionText}>Yes</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[
-                    styles.optionButton,
-                    experienceItching === false && styles.optionSelected,
-                  ]}
+                  style={[styles.optionButton, experienceItching === false && styles.optionSelected]}
                   onPress={() => setExperienceItching(false)}
                 >
                   <Text style={styles.optionText}>No</Text>
@@ -429,19 +322,13 @@ export default function AIPrediction({ navigation }) {
               <Text style={styles.modalLabel}>Is the affected area growing or changing shape?</Text>
               <View style={styles.optionButtons}>
                 <TouchableOpacity
-                  style={[
-                    styles.optionButton,
-                    areaGrowingShape === true && styles.optionSelected,
-                  ]}
+                  style={[styles.optionButton, areaGrowingShape === true && styles.optionSelected]}
                   onPress={() => setAreaGrowingShape(true)}
                 >
                   <Text style={styles.optionText}>Yes</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[
-                    styles.optionButton,
-                    areaGrowingShape === false && styles.optionSelected,
-                  ]}
+                  style={[styles.optionButton, areaGrowingShape === false && styles.optionSelected]}
                   onPress={() => setAreaGrowingShape(false)}
                 >
                   <Text style={styles.optionText}>No</Text>
@@ -451,31 +338,34 @@ export default function AIPrediction({ navigation }) {
               <Text style={styles.modalLabel}>Any family history of skin cancer?</Text>
               <View style={styles.optionButtons}>
                 <TouchableOpacity
-                  style={[
-                    styles.optionButton,
-                    skinCancerHistory === true && styles.optionSelected,
-                  ]}
+                  style={[styles.optionButton, skinCancerHistory === true && styles.optionSelected]}
                   onPress={() => setSkinCancerHistory(true)}
                 >
                   <Text style={styles.optionText}>Yes</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[
-                    styles.optionButton,
-                    skinCancerHistory === false && styles.optionSelected,
-                  ]}
+                  style={[styles.optionButton, skinCancerHistory === false && styles.optionSelected]}
                   onPress={() => setSkinCancerHistory(false)}
                 >
                   <Text style={styles.optionText}>No</Text>
                 </TouchableOpacity>
               </View>
 
-              <TouchableOpacity
-                style={styles.submitButton}
-                onPress={handleModalSubmit}
-              >
-                <Text style={styles.submitButtonText}>Submit & Analyze</Text>
-              </TouchableOpacity>
+              {/* Button Container */}
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={handleModalSubmit}
+                >
+                  <Text style={styles.submitButtonText}>Submit & Analyze</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>
@@ -622,4 +512,33 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   submitButtonText: { color: '#1E2A3C', fontSize: 16, fontWeight: '600' },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  cancelButton: {
+    backgroundColor: '#FF4D4D',
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  cancelButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  submitButton: {
+    backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  submitButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
 });

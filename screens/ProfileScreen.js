@@ -16,8 +16,7 @@ import { format } from 'date-fns';
 import { AntDesign } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 
-const SPECIAL_MESSAGE = "The model could not confidently identify the disease. Your skin may be healthy or an unrecognized condition.";
-
+const SPECIAL_MESSAGE = "The model couldn't detect your disease with sufficient confidence.";
 const ProfileScreen = () => {
   const [diagnoses, setDiagnoses] = useState([]);
   const [loading, setLoading] = useState(true);
