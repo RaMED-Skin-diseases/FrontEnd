@@ -193,8 +193,9 @@ const ProfileScreen = () => {
       ) : diagnoses.length > 0 ? (
         diagnoses.map((entry) => {
           const result = JSON.parse(entry.diagnosis_result);
-          const message = result.message || `Condition: ${result.predicted_class}`;
+          const message = result.message || `Condition: ${result.class}`;
           const probability = result.probability || 'N/A';
+
           return (
             <View key={entry.id} style={styles.card}>
               <Image source={{ uri: entry.image_url }} style={styles.image} />

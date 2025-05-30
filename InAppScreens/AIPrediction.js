@@ -164,13 +164,7 @@ export default function AIPrediction({ navigation }) {
 }
 
   const handleModalSubmit = async () => {
-    console.log('Sunlight Duration:', sunlightDuration);
-    console.log('Uses Sunscreen:', usesSunscreen ? 'Yes' : 'No');
-    console.log('Skin Cancer History:', skinCancerHistory ? 'Yes' : 'No');
-    console.log('Area Growing/Changing Shape:', areaGrowingShape ? 'Yes' : 'No');
-    console.log('Experience Itching:', experienceItching ? 'Yes' : 'No');
-  
-    setModalVisible(false);
+    setModalVisible(false); 
     setIsLoading(true);
   
     try {
@@ -186,15 +180,15 @@ export default function AIPrediction({ navigation }) {
           
           // Create a file from the blob
           const fileName = 'upload.jpg';
-          const file = new File([blob], fileName, { type: 'image/jpeg' });
+          const image = new File([blob], fileName, { type: 'image/jpeg' });
           
-          formData.append('file', file);
+          formData.append('image', image);
         } else if (selectedImage.uri) {
           // If base64 is not available but URI is, try to fetch the image and create a blob
           try {
             const response = await fetch(selectedImage.uri);
             const blob = await response.blob();
-            formData.append('file', blob, 'upload.jpg');
+            formData.append('image', blob, 'upload.jpg');
           } catch (error) {
             console.error("Error creating blob from URI:", error);
             //Alert.alert('Error', 'Failed to process the image. Please try again.');
@@ -209,7 +203,7 @@ export default function AIPrediction({ navigation }) {
         }
       } else {
         // For native platforms (iOS/Android)
-        formData.append('file', {
+        formData.append('image', {
           uri: selectedImage.uri,
           name: 'upload.jpg',
           type: 'image/jpeg',
@@ -217,14 +211,13 @@ export default function AIPrediction({ navigation }) {
       }
   
       const token = await AsyncStorage.getItem('accessToken');
+      console.log('formdata',formData)
       
       // Make the API request
-      const response = await fetch('https://skinwise.tech/predict/', {
+      const response = await fetch('https://skinwise.tech/detect/upload-image/', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
-          // Don't set Content-Type on web for multipart/form-data
-          // The browser will set it automatically with the correct boundary
           ...(Platform.OS !== 'web' && { "Content-Type": "multipart/form-data" }),
         },
         body: formData,
@@ -238,18 +231,19 @@ export default function AIPrediction({ navigation }) {
   
       const data = await response.json();
       console.log('Data:', data);
-  
-      let combined_results = combineResults(
-        data.tensorflow_prediction.class,
-        data.tensorflow_prediction.probability,
-        data.torch_prediction.class,
-        data.torch_prediction.probability
-      );
+      setPrediction(data.diagnosis_result.class)
+      setProbability(data.diagnosis_result.probability);
+      // let combined_results = combineResults(
+      //   data.tensorflow_prediction.class,
+      //   data.tensorflow_prediction.probability,
+      //   data.torch_prediction.class,
+      //   data.torch_prediction.probability
+      // );
       
-      console.log('Combined Results:', combined_results);
-      setPrediction(combined_results.final_class);
-      console.log(combined_results.confidence);
-      setProbability(combined_results.confidence);
+      // console.log('Combined Results:', combined_results);
+      // setPrediction(combined_results.final_class);
+      // console.log(combined_results.confidence);
+      // setProbability(combined_results.confidence);
   
     } catch (error) {
       console.error("Analysis error:", error);
