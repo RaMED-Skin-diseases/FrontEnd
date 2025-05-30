@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }) => {
           console.error("Interval: Refresh token missing from storage during scheduled refresh. Logging out.");
           await logout(); // Logout if token disappears from storage
       }
-    }, 60000); // Refresh every 2 minutes (120000 ms)
+    }, 120000); // Refresh every 2 minutes (120000 ms)
   };
   // --- End Interval Management ---
 
