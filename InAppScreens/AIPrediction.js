@@ -248,10 +248,16 @@ export default function AIPrediction({ navigation }) {
     } catch (error) {
       console.error("Analysis error:", error);
       //Alert.alert('Error', error.message || 'Failed to analyze image.');
+      let message = 'Failed to analyze image.';
+      if (error.message.includes('504')) {
+      message = 'The server took too long. try again later.';
+      } else if (error.message.includes('Network request failed')) {
+      message = 'Please check your internet connection.';
+     }
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: error.message || 'Failed to analyze image.'
+        text2: message || 'Failed to analyze image.'
       });
     } finally {
       setIsLoading(false);
