@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Image, ScrollView, ActivityIndicator } from 'react-native'; // Import ActivityIndicator
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Image, ScrollView, ActivityIndicator , Platform } from 'react-native'; // Import ActivityIndicator
 import * as ImagePicker from 'expo-image-picker';
 import Toast from 'react-native-toast-message';
 export default function SignupScreenPart3({ route, navigation }) {
@@ -42,78 +42,95 @@ export default function SignupScreenPart3({ route, navigation }) {
 
   const handleSubmit = async () => {
     if (!doctorInfo.bio || !doctorInfo.specialization || !doctorInfo.clinicDetails || !doctorInfo.verificationImage) {
-      //Alert.alert("Missing Fields", "Please complete all the fields and upload your verification image.");
       Toast.show({
         type: 'error',
         text1: 'Missing Fields',
-        text2: 'Please complete all the fields and upload your verification image.',
+        text2: 'Please complete all fields and upload a verification image.',
       });
       return;
     }
-
-    setIsLoading(true); // Set loading to true when submission starts
-
+  
+    setIsLoading(true);
+  
     const formData = new FormData();
-    formData.append('f_name', form.firstName);
-    formData.append('l_name', form.lastName);
-    formData.append('date_of_birth', form.dateOfBirth);
-    formData.append('email', form.email);
-    formData.append('gender', form.gender);
-    formData.append('password', form.password);
-    formData.append('username', form.username);
-    formData.append('user_type', form.userRole);
-    formData.append('info', doctorInfo.bio);
-    formData.append('specialization', doctorInfo.specialization);
-    formData.append('clinic_details', doctorInfo.clinicDetails);
-
-    formData.append('verification_image', {
-      uri: doctorInfo.verificationImage.uri,
-      type: 'image/jpeg',
-      name: 'verification.jpg',
-    });
-
-    console.log('Sending FormData...');
-
+    formData.append('f_name', form.firstName || '');
+    formData.append('l_name', form.lastName || '');
+    formData.append('date_of_birth', form.dateOfBirth || '');
+    formData.append('email', form.email ? form.email.toLowerCase() : '');
+    formData.append('gender', form.gender || '');
+    formData.append('password', form.password || '');
+    formData.append('username', form.username || '');
+    formData.append('user_type', form.userRole || '');
+    formData.append('info', doctorInfo.bio || '');
+    formData.append('specialization', doctorInfo.specialization || '');
+    formData.append('clinic_details', doctorInfo.clinicDetails || '');
+  
+    // Handle verification_image based on platform
+    if (doctorInfo.verificationImage) {
+      if (Platform.OS === 'web' && doctorInfo.verificationImage.file) {
+        // On web, append the File object
+        formData.append(
+          'verification_image',
+          doctorInfo.verificationImage.file,
+          doctorInfo.verificationImage.file.name || 'verification.jpg'
+        );
+      } else {
+        // On native, append the object with uri, type, and name
+        formData.append('verification_image', {
+          uri: doctorInfo.verificationImage.uri,
+          type: doctorInfo.verificationImage.type || 'image/jpeg',
+          name: doctorInfo.verificationImage.fileName || 'verification.jpg',
+        });
+      }
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Verification image is missing.',
+      });
+      setIsLoading(false);
+      return;
+    }
+  
+    // Debug FormData contents
+    console.log('FormData contents:');
+    for (let [key, value] of formData) {
+      console.log(`${key}:`, value);
+    }
+  
     try {
       const response = await fetch('https://skinwise.tech/account/signup', {
         method: 'POST',
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Accept': 'application/json',
         },
         body: formData,
       });
-
+  
       const responseText = await response.text();
-      console.log("Response Text:", responseText);
-
-      if (response.ok) {
-        const result = JSON.parse(responseText);
-        //Alert.alert('Success', 'Account created successfully. Please verify your email.');
-        Toast.show({
-          type: 'success',
-          text1: 'Success',
-          text2: 'Account created successfully. Please verify your email.',
-        });
-        navigation.navigate('EmailVerification', { email: form.email, username: form.username });
-      } else {
-        console.error("Error response from server:", responseText);
-        //Alert.alert('Error', 'Failed to create account. Please try again later.');
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: 'Failed to create account. Please try again later.',
-        });
+      console.log('Response Status:', response.status);
+      console.log('Response Text:', responseText);
+  
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status} - ${responseText}`);
       }
+  
+      // Handle successful response
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Signup successful!',
+      });
+      navigation.navigate('EmailVerification', { email: form.email, username: form.username });
     } catch (error) {
-      console.error("Error during fetch:", error);
-      //Alert.alert('Error', error.message || 'An unknown error occurred during the fetch operation.');
+      console.error('Error:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: error.message || 'An unknown error occurred during the fetch operation.',
+        text2: error.message || 'Something went wrong. Please try again.',
       });
     } finally {
-      setIsLoading(false); // Set loading to false when submission finishes (success or error)
+      setIsLoading(false);
     }
   };
 
