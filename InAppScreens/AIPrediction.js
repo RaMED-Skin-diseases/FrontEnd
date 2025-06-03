@@ -169,7 +169,10 @@ export default function AIPrediction({ navigation }) {
       }
 
       const data = await response.json();
+      console.log('API Response:', data);
+      console.log(data.diagnosis_result.probability)
       setPrediction(data.diagnosis_result.class || data.diagnosis_result.message);
+      console.log(data.diagnosis_result.message);
       setProbability(data.diagnosis_result.probability || 'N/A');
     } catch (error) {
       let message = 'Failed to analyze image.';
@@ -256,10 +259,10 @@ export default function AIPrediction({ navigation }) {
               <Text style={styles.resultLabel}>Condition:</Text>
               <Text style={styles.resultValue}>{prediction}</Text>
             </View>
-            {typeof probability === 'number' && (
+            {prediction !== "The model couldn't detect your disease with sufficient confidence." && (
               <View style={styles.resultRow}>
                 <Text style={styles.resultLabel}>Confidence:</Text>
-                <Text style={styles.resultValue}>{probability} %</Text>
+                <Text style={styles.resultValue}>{probability}</Text>
               </View>
             )}
             <TouchableOpacity style={styles.chatButton} onPress={goToChatBotWithSummary}>
